@@ -13,7 +13,7 @@ const Index = () => {
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="md:w-1/2 mb-8 md:mb-0">
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
-                Your Career Journey <br />Starts with Unisphere
+                Your Career Journey <br />Starts with UniSphere
               </h1>
               <p className="text-lg md:text-xl text-unisphere-lightBlue/90 mb-8 md:pr-12">
                 Connect with top employers, get AI-powered career recommendations,
@@ -21,7 +21,7 @@ const Index = () => {
               </p>
               <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                 <Link to="/signup">
-                  <Button size="lg" className="bg-white text-unisphere-darkBlue hover:bg-gray-100 w-full sm:w-auto">
+                  <Button size="lg" className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white w-full sm:w-auto">
                     Get Started
                   </Button>
                 </Link>
@@ -34,9 +34,9 @@ const Index = () => {
             </div>
             <div className="md:w-1/2 flex justify-center">
               <img 
-                src="/placeholder.svg" 
-                alt="Career Management Dashboard" 
-                className="rounded-lg shadow-xl max-w-full md:max-w-md"
+                src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158" 
+                alt="Student accessing career platform" 
+                className="rounded-lg shadow-xl max-w-full md:max-w-md h-auto"
               />
             </div>
           </div>
@@ -114,26 +114,37 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA Section with Image */}
       <section className="bg-unisphere-darkBlue py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-white mb-6">
-            Ready to Take the Next Step in Your Career?
-          </h2>
-          <p className="text-lg text-unisphere-lightBlue/90 mb-8 max-w-2xl mx-auto">
-            Join thousands of students who have found their dream jobs through Unisphere.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Link to="/signup">
-              <Button size="lg" className="bg-white text-unisphere-darkBlue hover:bg-gray-100 w-full sm:w-auto">
-                Sign Up Now
-              </Button>
-            </Link>
-            <Link to="/login">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 w-full sm:w-auto">
-                Login
-              </Button>
-            </Link>
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between">
+            <div className="md:w-1/2 mb-8 md:mb-0 text-center md:text-left">
+              <h2 className="text-3xl font-bold text-white mb-6">
+                Ready to Take the Next Step in Your Career?
+              </h2>
+              <p className="text-lg text-unisphere-lightBlue/90 mb-8 max-w-2xl mx-auto md:mx-0">
+                Join thousands of students who have found their dream jobs through UniSphere.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center md:justify-start space-y-4 sm:space-y-0 sm:space-x-4">
+                <Link to="/signup">
+                  <Button size="lg" className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white w-full sm:w-auto">
+                    Sign Up Now
+                  </Button>
+                </Link>
+                <Link to="/login">
+                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 w-full sm:w-auto">
+                    Login
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            <div className="md:w-1/2 flex justify-center">
+              <img 
+                src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b" 
+                alt="Career Technology" 
+                className="rounded-lg shadow-xl max-w-full md:max-w-md h-auto"
+              />
+            </div>
           </div>
         </div>
       </section>

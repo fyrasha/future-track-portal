@@ -107,7 +107,6 @@ const applicationStatuses = {
 const Jobs = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [jobType, setJobType] = useState("all");
-  const [isAdmin, setIsAdmin] = useState(false); // Toggle for admin view
   const { toast } = useToast();
   const [selectedJob, setSelectedJob] = useState<typeof jobListings[0] | null>(null);
   const [applicationDialogOpen, setApplicationDialogOpen] = useState(false);
@@ -136,17 +135,6 @@ const Jobs = () => {
     });
   };
 
-  const deleteJob = (jobId: number) => {
-    toast({
-      title: "Job Deleted",
-      description: "The job posting has been removed.",
-    });
-  };
-
-  const toggleAdminView = () => {
-    setIsAdmin(!isAdmin);
-  };
-
   return (
     <MainLayout>
       <div className="container mx-auto py-8 px-4">
@@ -154,24 +142,17 @@ const Jobs = () => {
           <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-4 md:mb-0">Job Listings</h1>
           <div className="flex gap-3">
             <Link to="/applications">
-              <Button className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white">
+              <Button className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white">
                 <Briefcase className="mr-2 h-4 w-4" />
                 My Applications
               </Button>
             </Link>
             <Link to="/recommendations">
-              <Button className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white">
+              <Button className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white">
                 <Star className="mr-2 h-4 w-4" />
                 Career Recommendations
               </Button>
             </Link>
-            <Button 
-              onClick={toggleAdminView} 
-              variant="outline"
-              className="border-unisphere-darkBlue text-unisphere-darkBlue hover:bg-unisphere-darkBlue/10"
-            >
-              {isAdmin ? "Switch to Student View" : "Switch to Admin View"}
-            </Button>
           </div>
         </div>
         
@@ -219,7 +200,7 @@ const Jobs = () => {
                       <span className="bg-unisphere-lightBlue/20 text-unisphere-darkBlue px-3 py-1 rounded-full text-sm font-medium">
                         {job.type}
                       </span>
-                      {!isAdmin && applicationStatuses[job.id as keyof typeof applicationStatuses] && (
+                      {applicationStatuses[job.id as keyof typeof applicationStatuses] && (
                         <Badge className={
                           applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" ? "bg-green-100 text-green-800" :
                           applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review" ? "bg-yellow-100 text-yellow-800" :
@@ -249,42 +230,23 @@ const Jobs = () => {
                     <Calendar className="h-4 w-4 mr-2" />
                     <span>Deadline: {new Date(job.deadline).toLocaleDateString()}</span>
                   </div>
-                  {isAdmin ? (
-                    <div className="flex gap-2">
+                  <div className="flex gap-2">
+                    <Link to={`/jobs/${job.id}`}>
                       <Button 
                         variant="outline" 
                         className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10"
                       >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit Job
+                        View Details
                       </Button>
-                      <Button 
-                        variant="destructive" 
-                        onClick={() => deleteJob(job.id)}
-                      >
-                        <Trash className="h-4 w-4 mr-2" />
-                        Delete Job
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Link to={`/jobs/${job.id}`}>
-                        <Button 
-                          variant="outline" 
-                          className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10"
-                        >
-                          View Details
-                        </Button>
-                      </Link>
-                      <Button 
-                        className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white"
-                        onClick={() => applyForJob(job)}
-                        disabled={applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review"}
-                      >
-                        {applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review" ? "Applied" : "Apply Now"}
-                      </Button>
-                    </div>
-                  )}
+                    </Link>
+                    <Button 
+                      className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white"
+                      onClick={() => applyForJob(job)}
+                      disabled={applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review"}
+                    >
+                      {applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review" ? "Applied" : "Apply Now"}
+                    </Button>
+                  </div>
                 </CardFooter>
               </Card>
             ))

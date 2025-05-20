@@ -17,8 +17,8 @@ const Header = () => {
     <header className="w-full bg-white shadow-sm">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center">
-          <img src="/lovable-uploads/fdfe74bd-5402-4868-80e2-8f40c49af094.png" alt="Unisphere Logo" className="h-10" />
-          <span className="text-unisphere-darkBlue font-bold text-xl ml-2">Unisphere</span>
+          <img src="/lovable-uploads/fdfe74bd-5402-4868-80e2-8f40c49af094.png" alt="UniSphere Logo" className="h-10" />
+          <span className="text-unisphere-darkBlue font-bold text-xl ml-2">UniSphere</span>
         </Link>
 
         {isMobile ? (

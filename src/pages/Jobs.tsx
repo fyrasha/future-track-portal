@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -27,7 +26,8 @@ import {
   CheckCircle2, 
   Clock, 
   Edit, 
-  Trash 
+  Trash,
+  Star
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import { 
@@ -44,7 +44,7 @@ import JobApplicationDialog from "@/components/JobApplicationDialog";
 // Mock job data
 const jobListings = [
   {
-    id: A1,
+    id: 1, // Fixed: Changed A1 to 1
     title: "Software Engineer Intern",
     company: "TechCorp Inc.",
     location: "San Francisco, CA",

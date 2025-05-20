@@ -85,7 +85,7 @@ const jobListings = [
 
 const Jobs = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [jobType, setJobType] = useState("");
+  const [jobType, setJobType] = useState("all"); // Changed default value from "" to "all"
   
   // Filter jobs based on search term and job type
   const filteredJobs = jobListings.filter(job => {
@@ -93,7 +93,7 @@ const Jobs = () => {
                          job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          job.location.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesType = jobType === "" || job.type === jobType;
+    const matchesType = jobType === "all" || job.type === jobType; // Changed from "" to "all"
     
     return matchesSearch && matchesType;
   });
@@ -127,7 +127,7 @@ const Jobs = () => {
                 <SelectValue placeholder="Job Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem> {/* Changed from "" to "all" */}
                 <SelectItem value="Full-time">Full-time</SelectItem>
                 <SelectItem value="Part-time">Part-time</SelectItem>
                 <SelectItem value="Internship">Internship</SelectItem>

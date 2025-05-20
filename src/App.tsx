@@ -12,6 +12,7 @@ import AdminLogin from "./pages/AdminLogin";
 import Jobs from "./pages/Jobs";
 import Resume from "./pages/Resume";
 import Calendar from "./pages/Calendar";
+import AIResumeScreen from "./pages/AIResumeScreen";
 import NotFound from "./pages/NotFound";
 
 // Create a client outside of the component
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/resume" element={<Resume />} />
             <Route path="/calendar" element={<Calendar />} />
+            <Route path="/ai-resume-screen" element={<AIResumeScreen />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

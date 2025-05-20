@@ -18,7 +18,17 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Briefcase, MapPin, Building, Calendar } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Briefcase, 
+  MapPin, 
+  Building, 
+  Calendar, 
+  CheckCircle2, 
+  Clock, 
+  Edit, 
+  Trash 
+} from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import { 
   Pagination, 
@@ -28,6 +38,7 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
+import { useToast } from "@/components/ui/use-toast";
 
 // Mock job data
 const jobListings = [
@@ -83,9 +94,20 @@ const jobListings = [
   }
 ];
 
+// Application statuses for tracking
+const applicationStatuses = {
+  1: "Applied",
+  2: "Under Review",
+  3: "Not Started",
+  4: "Under Review",
+  5: "Interview Scheduled"
+};
+
 const Jobs = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [jobType, setJobType] = useState("all"); // Changed default value from "" to "all"
+  const [jobType, setJobType] = useState("all");
+  const [isAdmin, setIsAdmin] = useState(false); // Toggle for admin view
+  const { toast } = useToast();
   
   // Filter jobs based on search term and job type
   const filteredJobs = jobListings.filter(job => {
@@ -93,22 +115,49 @@ const Jobs = () => {
                          job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          job.location.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesType = jobType === "all" || job.type === jobType; // Changed from "" to "all"
+    const matchesType = jobType === "all" || job.type === jobType;
     
     return matchesSearch && matchesType;
   });
+
+  const applyForJob = (jobId: number) => {
+    toast({
+      title: "Application Submitted",
+      description: "Your application has been successfully submitted.",
+    });
+  };
+
+  const deleteJob = (jobId: number) => {
+    toast({
+      title: "Job Deleted",
+      description: "The job posting has been removed.",
+    });
+  };
+
+  const toggleAdminView = () => {
+    setIsAdmin(!isAdmin);
+  };
 
   return (
     <MainLayout>
       <div className="container mx-auto py-8 px-4">
         <div className="flex flex-col md:flex-row justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-4 md:mb-0">Job Listings</h1>
-          <Link to="/calendar">
-            <Button className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white">
-              <Calendar className="mr-2 h-4 w-4" />
-              View Application Deadlines
+          <div className="flex gap-3">
+            <Link to="/calendar">
+              <Button className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white">
+                <Calendar className="mr-2 h-4 w-4" />
+                View Application Deadlines
+              </Button>
+            </Link>
+            <Button 
+              onClick={toggleAdminView} 
+              variant="outline"
+              className="border-unisphere-darkBlue text-unisphere-darkBlue hover:bg-unisphere-darkBlue/10"
+            >
+              {isAdmin ? "Switch to Student View" : "Switch to Admin View"}
             </Button>
-          </Link>
+          </div>
         </div>
         
         {/* Search and Filter */}
@@ -127,7 +176,7 @@ const Jobs = () => {
                 <SelectValue placeholder="Job Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem> {/* Changed from "" to "all" */}
+                <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="Full-time">Full-time</SelectItem>
                 <SelectItem value="Part-time">Part-time</SelectItem>
                 <SelectItem value="Internship">Internship</SelectItem>
@@ -151,9 +200,26 @@ const Jobs = () => {
                         {job.company}
                       </CardDescription>
                     </div>
-                    <span className="bg-unisphere-lightBlue/20 text-unisphere-darkBlue px-3 py-1 rounded-full text-sm font-medium">
-                      {job.type}
-                    </span>
+                    <div className="flex gap-2">
+                      <span className="bg-unisphere-lightBlue/20 text-unisphere-darkBlue px-3 py-1 rounded-full text-sm font-medium">
+                        {job.type}
+                      </span>
+                      {!isAdmin && applicationStatuses[job.id as keyof typeof applicationStatuses] && (
+                        <Badge className={
+                          applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" ? "bg-green-100 text-green-800" :
+                          applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review" ? "bg-yellow-100 text-yellow-800" :
+                          applicationStatuses[job.id as keyof typeof applicationStatuses] === "Interview Scheduled" ? "bg-blue-100 text-blue-800" :
+                          "bg-gray-100 text-gray-800"
+                        }>
+                          {applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" ? (
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                          ) : applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review" ? (
+                            <Clock className="h-3 w-3 mr-1" />
+                          ) : null}
+                          {applicationStatuses[job.id as keyof typeof applicationStatuses]}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -168,9 +234,42 @@ const Jobs = () => {
                     <Calendar className="h-4 w-4 mr-2" />
                     <span>Deadline: {new Date(job.deadline).toLocaleDateString()}</span>
                   </div>
-                  <Link to={`/jobs/${job.id}`}>
-                    <Button>View Details</Button>
-                  </Link>
+                  {isAdmin ? (
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Job
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        onClick={() => deleteJob(job.id)}
+                      >
+                        <Trash className="h-4 w-4 mr-2" />
+                        Delete Job
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Link to={`/jobs/${job.id}`}>
+                        <Button 
+                          variant="outline" 
+                          className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10"
+                        >
+                          View Details
+                        </Button>
+                      </Link>
+                      <Button 
+                        className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white"
+                        onClick={() => applyForJob(job.id)}
+                        disabled={applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review"}
+                      >
+                        {applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review" ? "Applied" : "Apply Now"}
+                      </Button>
+                    </div>
+                  )}
                 </CardFooter>
               </Card>
             ))

@@ -38,12 +38,13 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import JobApplicationDialog from "@/components/JobApplicationDialog";
 
 // Mock job data
 const jobListings = [
   {
-    id: 1,
+    id: A1,
     title: "Software Engineer Intern",
     company: "TechCorp Inc.",
     location: "San Francisco, CA",
@@ -108,6 +109,8 @@ const Jobs = () => {
   const [jobType, setJobType] = useState("all");
   const [isAdmin, setIsAdmin] = useState(false); // Toggle for admin view
   const { toast } = useToast();
+  const [selectedJob, setSelectedJob] = useState<typeof jobListings[0] | null>(null);
+  const [applicationDialogOpen, setApplicationDialogOpen] = useState(false);
   
   // Filter jobs based on search term and job type
   const filteredJobs = jobListings.filter(job => {
@@ -120,7 +123,13 @@ const Jobs = () => {
     return matchesSearch && matchesType;
   });
 
-  const applyForJob = (jobId: number) => {
+  const applyForJob = (job: typeof jobListings[0]) => {
+    setSelectedJob(job);
+    setApplicationDialogOpen(true);
+  };
+
+  const handleApplicationSubmitted = (jobId: number) => {
+    // In a real app, this would update the backend
     toast({
       title: "Application Submitted",
       description: "Your application has been successfully submitted.",
@@ -144,10 +153,16 @@ const Jobs = () => {
         <div className="flex flex-col md:flex-row justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-4 md:mb-0">Job Listings</h1>
           <div className="flex gap-3">
-            <Link to="/calendar">
+            <Link to="/applications">
               <Button className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white">
-                <Calendar className="mr-2 h-4 w-4" />
-                View Application Deadlines
+                <Briefcase className="mr-2 h-4 w-4" />
+                My Applications
+              </Button>
+            </Link>
+            <Link to="/recommendations">
+              <Button className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white">
+                <Star className="mr-2 h-4 w-4" />
+                Career Recommendations
               </Button>
             </Link>
             <Button 
@@ -263,7 +278,7 @@ const Jobs = () => {
                       </Link>
                       <Button 
                         className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white"
-                        onClick={() => applyForJob(job.id)}
+                        onClick={() => applyForJob(job)}
                         disabled={applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review"}
                       >
                         {applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review" ? "Applied" : "Apply Now"}
@@ -304,6 +319,16 @@ const Jobs = () => {
             </PaginationContent>
           </Pagination>
         </div>
+
+        {/* Application Dialog */}
+        {selectedJob && (
+          <JobApplicationDialog 
+            job={selectedJob}
+            open={applicationDialogOpen}
+            onOpenChange={setApplicationDialogOpen}
+            onApplied={handleApplicationSubmitted}
+          />
+        )}
       </div>
     </MainLayout>
   );

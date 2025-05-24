@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import MainLayout from "@/components/MainLayout";
 import { 
@@ -13,7 +12,9 @@ import {
   Briefcase, 
   Star, 
   Calendar,
-  ArrowRight
+  ArrowRight,
+  LogIn,
+  Target
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -96,6 +97,55 @@ const recommendedJobs = [
 
 const Recommendations = () => {
   const [activeTab, setActiveTab] = useState<"careers" | "jobs">("careers");
+  
+  // Simulate no user logged in
+  const isLoggedIn = false;
+
+  if (!isLoggedIn) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto py-8 px-4">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-2">Career Recommendations</h1>
+            <p className="text-gray-600">Personalized career paths and job recommendations based on your skills and preferences</p>
+          </div>
+
+          <Card className="max-w-md mx-auto text-center">
+            <CardHeader>
+              <div className="flex justify-center mb-4">
+                <div className="bg-unisphere-blue/10 p-4 rounded-full">
+                  <Target className="h-12 w-12 text-unisphere-blue" />
+                </div>
+              </div>
+              <CardTitle className="text-xl text-unisphere-darkBlue">Get Personalized Recommendations</CardTitle>
+              <CardDescription>
+                Log in to receive career path suggestions and job recommendations tailored to your skills and interests
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <Link to="/login">
+                  <Button className="w-full bg-unisphere-darkBlue hover:bg-unisphere-blue text-white">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Login for Recommendations
+                  </Button>
+                </Link>
+                <Link to="/jobs">
+                  <Button variant="outline" className="w-full border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10">
+                    Browse All Jobs
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // This would be the logged-in view (keeping original structure for when login is implemented)
+  const careerPaths: any[] = [];
+  const recommendedJobs: any[] = [];
 
   return (
     <MainLayout>

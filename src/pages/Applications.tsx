@@ -19,67 +19,19 @@ import {
   Building,
   MapPin,
   Briefcase,
-  Star
+  Star,
+  FileText,
+  LogIn
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import MainLayout from "@/components/MainLayout";
-
-// Mock application data with Malaysia locations
-const applicationData = [
-  {
-    id: 1,
-    jobTitle: "Software Engineer Intern",
-    company: "TechCorp Malaysia",
-    location: "Kuala Lumpur, Malaysia",
-    appliedDate: "2025-05-15",
-    status: "Applied",
-    nextStep: "Waiting for review",
-    interviewDate: null
-  },
-  {
-    id: 2,
-    jobTitle: "Data Analyst",
-    company: "Analytics Pro",
-    location: "Petaling Jaya, Malaysia",
-    appliedDate: "2025-05-10",
-    status: "Under Review",
-    nextStep: "Technical assessment",
-    interviewDate: null
-  },
-  {
-    id: 3,
-    jobTitle: "Marketing Assistant",
-    company: "Brand Masters",
-    location: "Penang, Malaysia",
-    appliedDate: "2025-05-01",
-    status: "Interview Scheduled",
-    nextStep: "Interview preparation",
-    interviewDate: "2025-05-25"
-  },
-  {
-    id: 4,
-    jobTitle: "UX/UI Design Intern",
-    company: "Creative Solutions",
-    location: "Johor Bahru, Malaysia",
-    appliedDate: "2025-05-07",
-    status: "Rejected",
-    nextStep: null,
-    interviewDate: null
-  },
-  {
-    id: 5,
-    jobTitle: "Finance Analyst",
-    company: "Global Finance",
-    location: "Cyberjaya, Malaysia",
-    appliedDate: "2025-05-14",
-    status: "Offer Received",
-    nextStep: "Review offer details",
-    interviewDate: "2025-05-18"
-  }
-];
+import { Link } from "react-router-dom";
 
 const Applications = () => {
-  const [applications] = useState(applicationData);
+  // Simulate no user logged in
+  const isLoggedIn = false;
+  const applications: any[] = [];
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -111,6 +63,48 @@ const Applications = () => {
         return <Badge>{status}</Badge>;
     }
   };
+
+  if (!isLoggedIn) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto py-8 px-4">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-2">My Applications</h1>
+            <p className="text-gray-600">Track all your job applications and their current status</p>
+          </div>
+
+          <Card className="max-w-md mx-auto text-center">
+            <CardHeader>
+              <div className="flex justify-center mb-4">
+                <div className="bg-unisphere-blue/10 p-4 rounded-full">
+                  <FileText className="h-12 w-12 text-unisphere-blue" />
+                </div>
+              </div>
+              <CardTitle className="text-xl text-unisphere-darkBlue">No Applications Yet</CardTitle>
+              <CardDescription>
+                Please log in to view and track your job applications
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <Link to="/login">
+                  <Button className="w-full bg-unisphere-darkBlue hover:bg-unisphere-blue text-white">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Login to View Applications
+                  </Button>
+                </Link>
+                <Link to="/jobs">
+                  <Button variant="outline" className="w-full border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10">
+                    Browse Jobs
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>

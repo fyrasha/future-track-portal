@@ -14,10 +14,14 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Upload, Download, PlusCircle, XCircle, Check } from "lucide-react";
+import { FileText, Upload, Download, PlusCircle, XCircle, Check, LogIn } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
+import { Link } from "react-router-dom";
 
 const Resume = () => {
+  // Simulate no user logged in
+  const isLoggedIn = false;
+  
   const [skills, setSkills] = useState<string[]>([
     "React", "TypeScript", "Node.js", "Python"
   ]);
@@ -38,6 +42,48 @@ const Resume = () => {
   const removeSkill = (skillToRemove: string) => {
     setSkills(skills.filter(skill => skill !== skillToRemove));
   };
+
+  if (!isLoggedIn) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto py-8 px-4">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-2">Resume Builder</h1>
+            <p className="text-gray-600">Create and build your professional resume</p>
+          </div>
+
+          <Card className="max-w-md mx-auto text-center">
+            <CardHeader>
+              <div className="flex justify-center mb-4">
+                <div className="bg-unisphere-blue/10 p-4 rounded-full">
+                  <FileText className="h-12 w-12 text-unisphere-blue" />
+                </div>
+              </div>
+              <CardTitle className="text-xl text-unisphere-darkBlue">Build Your Resume</CardTitle>
+              <CardDescription>
+                Please log in to access the resume builder and create your professional resume
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <Link to="/login">
+                  <Button className="w-full bg-unisphere-darkBlue hover:bg-unisphere-blue text-white">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Login to Build Resume
+                  </Button>
+                </Link>
+                <Link to="/jobs">
+                  <Button variant="outline" className="w-full border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10">
+                    Browse Jobs
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>

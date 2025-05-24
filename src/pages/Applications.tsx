@@ -24,13 +24,13 @@ import {
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/MainLayout";
 
-// Mock application data
+// Mock application data with Malaysia locations
 const applicationData = [
   {
     id: 1,
     jobTitle: "Software Engineer Intern",
-    company: "TechCorp Inc.",
-    location: "San Francisco, CA",
+    company: "TechCorp Malaysia",
+    location: "Kuala Lumpur, Malaysia",
     appliedDate: "2025-05-15",
     status: "Applied",
     nextStep: "Waiting for review",
@@ -40,7 +40,7 @@ const applicationData = [
     id: 2,
     jobTitle: "Data Analyst",
     company: "Analytics Pro",
-    location: "Remote",
+    location: "Petaling Jaya, Malaysia",
     appliedDate: "2025-05-10",
     status: "Under Review",
     nextStep: "Technical assessment",
@@ -50,7 +50,7 @@ const applicationData = [
     id: 3,
     jobTitle: "Marketing Assistant",
     company: "Brand Masters",
-    location: "New York, NY",
+    location: "Penang, Malaysia",
     appliedDate: "2025-05-01",
     status: "Interview Scheduled",
     nextStep: "Interview preparation",
@@ -60,7 +60,7 @@ const applicationData = [
     id: 4,
     jobTitle: "UX/UI Design Intern",
     company: "Creative Solutions",
-    location: "Chicago, IL",
+    location: "Johor Bahru, Malaysia",
     appliedDate: "2025-05-07",
     status: "Rejected",
     nextStep: null,
@@ -70,7 +70,7 @@ const applicationData = [
     id: 5,
     jobTitle: "Finance Analyst",
     company: "Global Finance",
-    location: "Boston, MA",
+    location: "Cyberjaya, Malaysia",
     appliedDate: "2025-05-14",
     status: "Offer Received",
     nextStep: "Review offer details",

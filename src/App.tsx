@@ -15,6 +15,7 @@ import Calendar from "./pages/Calendar";
 import AIResumeScreen from "./pages/AIResumeScreen";
 import Applications from "./pages/Applications";
 import Recommendations from "./pages/Recommendations";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 // Create a client outside of the component
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/admin" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/resume" element={<Resume />} />
             <Route path="/calendar" element={<Calendar />} />

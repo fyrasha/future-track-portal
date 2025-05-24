@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -25,9 +26,8 @@ import {
   Calendar, 
   CheckCircle2, 
   Clock, 
-  Edit, 
-  Trash,
-  Star
+  Star,
+  Lock
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import { 
@@ -41,13 +41,13 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import JobApplicationDialog from "@/components/JobApplicationDialog";
 
-// Mock job data
+// Mock job data with Malaysia locations
 const jobListings = [
   {
-    id: 1, // Fixed: Changed A1 to 1
+    id: 1,
     title: "Software Engineer Intern",
-    company: "TechCorp Inc.",
-    location: "San Francisco, CA",
+    company: "TechCorp Malaysia",
+    location: "Kuala Lumpur, Malaysia",
     type: "Internship",
     postedDate: "2025-05-15",
     deadline: "2025-06-30",
@@ -57,7 +57,7 @@ const jobListings = [
     id: 2,
     title: "Data Analyst",
     company: "Analytics Pro",
-    location: "Remote",
+    location: "Petaling Jaya, Malaysia",
     type: "Full-time",
     postedDate: "2025-05-10",
     deadline: "2025-06-15",
@@ -67,7 +67,7 @@ const jobListings = [
     id: 3,
     title: "Marketing Assistant",
     company: "Brand Masters",
-    location: "New York, NY",
+    location: "Penang, Malaysia",
     type: "Part-time",
     postedDate: "2025-05-17",
     deadline: "2025-06-20",
@@ -77,7 +77,7 @@ const jobListings = [
     id: 4,
     title: "UX/UI Design Intern",
     company: "Creative Solutions",
-    location: "Chicago, IL",
+    location: "Johor Bahru, Malaysia",
     type: "Internship",
     postedDate: "2025-05-12",
     deadline: "2025-07-01",
@@ -87,7 +87,7 @@ const jobListings = [
     id: 5,
     title: "Finance Analyst",
     company: "Global Finance",
-    location: "Boston, MA",
+    location: "Cyberjaya, Malaysia",
     type: "Full-time",
     postedDate: "2025-05-14",
     deadline: "2025-06-25",
@@ -111,6 +111,10 @@ const Jobs = () => {
   const [selectedJob, setSelectedJob] = useState<typeof jobListings[0] | null>(null);
   const [applicationDialogOpen, setApplicationDialogOpen] = useState(false);
   
+  // Mock authentication state - in real app this would come from auth context
+  const [isLoggedIn] = useState(false);
+  const [userRole] = useState<'student' | 'admin' | null>(null);
+  
   // Filter jobs based on search term and job type
   const filteredJobs = jobListings.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -123,12 +127,31 @@ const Jobs = () => {
   });
 
   const applyForJob = (job: typeof jobListings[0]) => {
+    if (!isLoggedIn) {
+      toast({
+        title: "Login Required",
+        description: "Please login as a student to apply for jobs.",
+        variant: "destructive"
+      });
+      return;
+    }
     setSelectedJob(job);
     setApplicationDialogOpen(true);
   };
 
+  const viewJobDetails = (jobId: number) => {
+    if (!isLoggedIn) {
+      toast({
+        title: "Login Required",
+        description: "Please login as a student to view job details.",
+        variant: "destructive"
+      });
+      return;
+    }
+    // Navigate to job details
+  };
+
   const handleApplicationSubmitted = (jobId: number) => {
-    // In a real app, this would update the backend
     toast({
       title: "Application Submitted",
       description: "Your application has been successfully submitted.",
@@ -153,6 +176,13 @@ const Jobs = () => {
                 Career Recommendations
               </Button>
             </Link>
+            {userRole === 'admin' && (
+              <Link to="/admin/dashboard">
+                <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                  Admin Dashboard
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
         
@@ -223,7 +253,14 @@ const Jobs = () => {
                     <MapPin className="h-4 w-4 mr-2" />
                     <span>{job.location}</span>
                   </div>
-                  <p className="text-gray-700">{job.description}</p>
+                  <p className="text-gray-700">
+                    {isLoggedIn && userRole === 'student' ? job.description : 
+                     <span className="flex items-center text-gray-500">
+                       <Lock className="h-4 w-4 mr-2" />
+                       Login as a student to view job details
+                     </span>
+                    }
+                  </p>
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row justify-between border-t pt-4">
                   <div className="flex items-center text-gray-500 mb-2 sm:mb-0">
@@ -231,20 +268,20 @@ const Jobs = () => {
                     <span>Deadline: {new Date(job.deadline).toLocaleDateString()}</span>
                   </div>
                   <div className="flex gap-2">
-                    <Link to={`/jobs/${job.id}`}>
-                      <Button 
-                        variant="outline" 
-                        className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10"
-                      >
-                        View Details
-                      </Button>
-                    </Link>
+                    <Button 
+                      variant="outline" 
+                      className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10"
+                      onClick={() => viewJobDetails(job.id)}
+                    >
+                      {isLoggedIn && userRole === 'student' ? 'View Details' : 'Login to View'}
+                    </Button>
                     <Button 
                       className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white"
                       onClick={() => applyForJob(job)}
-                      disabled={applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review"}
+                      disabled={!isLoggedIn || (applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review")}
                     >
-                      {applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review" ? "Applied" : "Apply Now"}
+                      {!isLoggedIn ? "Login to Apply" : 
+                       (applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review") ? "Applied" : "Apply Now"}
                     </Button>
                   </div>
                 </CardFooter>

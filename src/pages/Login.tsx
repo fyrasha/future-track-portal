@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import MainLayout from "@/components/MainLayout";
 
 const Login = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -36,6 +37,8 @@ const Login = () => {
         description: "Redirecting to dashboard...",
       });
       setIsSubmitting(false);
+      // Redirect to jobs page for students
+      navigate("/jobs");
     }, 1500);
   };
 

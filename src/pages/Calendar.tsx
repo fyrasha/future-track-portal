@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -6,15 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar as CalendarIcon, Clock, Info } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Info, LogIn } from "lucide-react";
+import { Link } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
 
-// Mock deadline data
+// Mock deadline data - only shown when logged in
 const deadlines = [
   {
     id: 1,
     title: "Software Engineer Intern Application",
-    company: "TechCorp Inc.",
+    company: "TechCorp Malaysia",
     type: "application",
     date: new Date(2025, 5, 30), // June 30, 2025
     priority: "high"
@@ -22,7 +22,7 @@ const deadlines = [
   {
     id: 2,
     title: "Data Analyst Application",
-    company: "Analytics Pro",
+    company: "Analytics Pro KL",
     type: "application",
     date: new Date(2025, 5, 15), // June 15, 2025
     priority: "medium"
@@ -38,7 +38,7 @@ const deadlines = [
   {
     id: 4,
     title: "Career Fair",
-    company: "University Career Center",
+    company: "University Malaya Career Center",
     type: "event",
     date: new Date(2025, 6, 10), // July 10, 2025
     priority: "medium"
@@ -46,7 +46,7 @@ const deadlines = [
   {
     id: 5,
     title: "Interview",
-    company: "TechCorp Inc.",
+    company: "TechCorp Malaysia",
     type: "interview",
     date: new Date(2025, 6, 5), // July 5, 2025
     priority: "high"
@@ -54,7 +54,8 @@ const deadlines = [
 ];
 
 // Get events for specific date
-const getEventsForDate = (date: Date) => {
+const getEventsForDate = (date: Date, isLoggedIn: boolean) => {
+  if (!isLoggedIn) return [];
   return deadlines.filter(deadline => 
     deadline.date.getDate() === date.getDate() && 
     deadline.date.getMonth() === date.getMonth() && 
@@ -63,7 +64,8 @@ const getEventsForDate = (date: Date) => {
 };
 
 // Function to get upcoming deadlines sorted by date
-const getUpcomingDeadlines = () => {
+const getUpcomingDeadlines = (isLoggedIn: boolean) => {
+  if (!isLoggedIn) return [];
   const today = new Date();
   return [...deadlines]
     .filter(deadline => deadline.date >= today)
@@ -71,7 +73,8 @@ const getUpcomingDeadlines = () => {
 };
 
 // Function to get highlighted dates for the calendar
-const getHighlightedDates = () => {
+const getHighlightedDates = (isLoggedIn: boolean) => {
+  if (!isLoggedIn) return {};
   const dates: Record<string, { date: Date; priority: string }[]> = {};
   
   deadlines.forEach(deadline => {
@@ -102,20 +105,25 @@ const priorityColors: Record<string, string> = {
 };
 
 const CalendarPage = () => {
+  // Simulate no user logged in
+  const isLoggedIn = false;
+  
   const [date, setDate] = useState<Date>(new Date());
-  const [selectedEvents, setSelectedEvents] = useState(getEventsForDate(new Date()));
-  const highlightedDates = getHighlightedDates();
-  const upcomingDeadlines = getUpcomingDeadlines();
+  const [selectedEvents, setSelectedEvents] = useState(getEventsForDate(new Date(), isLoggedIn));
+  const highlightedDates = getHighlightedDates(isLoggedIn);
+  const upcomingDeadlines = getUpcomingDeadlines(isLoggedIn);
 
   const handleDateSelect = (newDate: Date | undefined) => {
     if (newDate) {
       setDate(newDate);
-      setSelectedEvents(getEventsForDate(newDate));
+      setSelectedEvents(getEventsForDate(newDate, isLoggedIn));
     }
   };
 
   // Custom day rendering for the calendar
   const dayRender = (day: Date): React.ReactNode => {
+    if (!isLoggedIn) return null;
+    
     const dateString = format(day, "yyyy-MM-dd");
     const events = highlightedDates[dateString];
     
@@ -164,20 +172,22 @@ const CalendarPage = () => {
                         ),
                       }}
                     />
-                    <div className="mt-4 flex flex-wrap gap-3">
-                      <div className="flex items-center gap-1.5">
-                        <div className={`w-3 h-3 rounded-full ${priorityColors.high}`}></div>
-                        <span className="text-sm text-gray-600">High Priority</span>
+                    {isLoggedIn && (
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-3 h-3 rounded-full ${priorityColors.high}`}></div>
+                          <span className="text-sm text-gray-600">High Priority</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-3 h-3 rounded-full ${priorityColors.medium}`}></div>
+                          <span className="text-sm text-gray-600">Medium Priority</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-3 h-3 rounded-full ${priorityColors.low}`}></div>
+                          <span className="text-sm text-gray-600">Low Priority</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className={`w-3 h-3 rounded-full ${priorityColors.medium}`}></div>
-                        <span className="text-sm text-gray-600">Medium Priority</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className={`w-3 h-3 rounded-full ${priorityColors.low}`}></div>
-                        <span className="text-sm text-gray-600">Low Priority</span>
-                      </div>
-                    </div>
+                    )}
                   </div>
                   
                   <div className="md:col-span-4">
@@ -188,7 +198,19 @@ const CalendarPage = () => {
                       </h3>
                     </div>
                     
-                    {selectedEvents.length > 0 ? (
+                    {!isLoggedIn ? (
+                      <div className="text-center py-12 bg-gray-50 rounded-lg">
+                        <LogIn className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                        <h3 className="text-lg font-medium text-gray-700 mb-1">Login Required</h3>
+                        <p className="text-gray-500 mb-4">Please log in to view your calendar events and deadlines.</p>
+                        <Link to="/login">
+                          <Button className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white">
+                            <LogIn className="mr-2 h-4 w-4" />
+                            Login
+                          </Button>
+                        </Link>
+                      </div>
+                    ) : selectedEvents.length > 0 ? (
                       <div className="space-y-4">
                         {selectedEvents.map(event => (
                           <div 
@@ -238,154 +260,169 @@ const CalendarPage = () => {
                 <CardTitle className="text-xl text-unisphere-darkBlue">Upcoming Deadlines</CardTitle>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="all">
-                  <TabsList className="w-full mb-4">
-                    <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-                    <TabsTrigger value="applications" className="flex-1">Applications</TabsTrigger>
-                    <TabsTrigger value="interviews" className="flex-1">Interviews</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="all" className="space-y-4">
-                    {upcomingDeadlines.length > 0 ? (
-                      upcomingDeadlines.map(deadline => (
-                        <div 
-                          key={deadline.id} 
-                          className="p-3 border rounded-md flex items-start"
-                          onClick={() => {
-                            setDate(deadline.date);
-                            setSelectedEvents(getEventsForDate(deadline.date));
-                          }}
-                        >
-                          <div 
-                            className={`h-10 w-10 rounded-md ${
-                              deadline.priority === "high" 
-                                ? "bg-red-100" 
-                                : deadline.priority === "medium"
-                                ? "bg-amber-100"
-                                : "bg-green-100"
-                            } flex items-center justify-center mr-3`}
-                          >
-                            <span className="text-xs font-medium">
-                              {format(deadline.date, "MMM")}
-                            </span>
-                            <span className="text-base font-bold">
-                              {format(deadline.date, "d")}
-                            </span>
-                          </div>
-                          <div>
-                            <div className="flex items-center">
-                              <h4 className="font-medium">{deadline.title}</h4>
-                              <Badge className={`ml-2 ${typeColors[deadline.type]}`} variant="outline">
-                                {deadline.type.charAt(0).toUpperCase() + deadline.type.slice(1)}
-                              </Badge>
+                {!isLoggedIn ? (
+                  <div className="text-center py-8">
+                    <LogIn className="h-8 w-8 mx-auto text-gray-300 mb-2" />
+                    <p className="text-gray-500 mb-4">Login to view your deadlines</p>
+                    <Link to="/login">
+                      <Button className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white">
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Login
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <>
+                    <Tabs defaultValue="all">
+                      <TabsList className="w-full mb-4">
+                        <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
+                        <TabsTrigger value="applications" className="flex-1">Applications</TabsTrigger>
+                        <TabsTrigger value="interviews" className="flex-1">Interviews</TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="all" className="space-y-4">
+                        {upcomingDeadlines.length > 0 ? (
+                          upcomingDeadlines.map(deadline => (
+                            <div 
+                              key={deadline.id} 
+                              className="p-3 border rounded-md flex items-start"
+                              onClick={() => {
+                                setDate(deadline.date);
+                                setSelectedEvents(getEventsForDate(deadline.date, isLoggedIn));
+                              }}
+                            >
+                              <div 
+                                className={`h-10 w-10 rounded-md ${
+                                  deadline.priority === "high" 
+                                    ? "bg-red-100" 
+                                    : deadline.priority === "medium"
+                                    ? "bg-amber-100"
+                                    : "bg-green-100"
+                                } flex items-center justify-center mr-3`}
+                              >
+                                <span className="text-xs font-medium">
+                                  {format(deadline.date, "MMM")}
+                                </span>
+                                <span className="text-base font-bold">
+                                  {format(deadline.date, "d")}
+                                </span>
+                              </div>
+                              <div>
+                                <div className="flex items-center">
+                                  <h4 className="font-medium">{deadline.title}</h4>
+                                  <Badge className={`ml-2 ${typeColors[deadline.type]}`} variant="outline">
+                                    {deadline.type.charAt(0).toUpperCase() + deadline.type.slice(1)}
+                                  </Badge>
+                                </div>
+                                {deadline.company && (
+                                  <p className="text-sm text-gray-600">{deadline.company}</p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {format(deadline.date, "EEEE, MMMM d")}
+                                </p>
+                              </div>
                             </div>
-                            {deadline.company && (
-                              <p className="text-sm text-gray-600">{deadline.company}</p>
-                            )}
-                            <p className="text-xs text-gray-500 mt-1">
-                              {format(deadline.date, "EEEE, MMMM d")}
-                            </p>
+                          ))
+                        ) : (
+                          <div className="text-center py-8">
+                            <Info className="h-8 w-8 mx-auto text-gray-300 mb-2" />
+                            <p className="text-gray-500">No upcoming deadlines</p>
                           </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8">
-                        <Info className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                        <p className="text-gray-500">No upcoming deadlines</p>
-                      </div>
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="applications" className="space-y-4">
-                    {upcomingDeadlines
-                      .filter(d => d.type === "application")
-                      .map(deadline => (
-                        <div 
-                          key={deadline.id} 
-                          className="p-3 border rounded-md flex items-start"
-                          onClick={() => {
-                            setDate(deadline.date);
-                            setSelectedEvents(getEventsForDate(deadline.date));
-                          }}
-                        >
-                          <div 
-                            className={`h-10 w-10 rounded-md ${
-                              deadline.priority === "high" 
-                                ? "bg-red-100" 
-                                : deadline.priority === "medium"
-                                ? "bg-amber-100"
-                                : "bg-green-100"
-                            } flex flex-col items-center justify-center mr-3`}
-                          >
-                            <span className="text-xs font-medium">
-                              {format(deadline.date, "MMM")}
-                            </span>
-                            <span className="text-base font-bold">
-                              {format(deadline.date, "d")}
-                            </span>
-                          </div>
-                          <div>
-                            <h4 className="font-medium">{deadline.title}</h4>
-                            {deadline.company && (
-                              <p className="text-sm text-gray-600">{deadline.company}</p>
-                            )}
-                            <p className="text-xs text-gray-500 mt-1">
-                              {format(deadline.date, "EEEE, MMMM d")}
-                            </p>
-                          </div>
-                        </div>
-                      ))
-                    }
-                  </TabsContent>
-                  
-                  <TabsContent value="interviews" className="space-y-4">
-                    {upcomingDeadlines
-                      .filter(d => d.type === "interview")
-                      .map(deadline => (
-                        <div 
-                          key={deadline.id} 
-                          className="p-3 border rounded-md flex items-start"
-                          onClick={() => {
-                            setDate(deadline.date);
-                            setSelectedEvents(getEventsForDate(deadline.date));
-                          }}
-                        >
-                          <div 
-                            className={`h-10 w-10 rounded-md ${
-                              deadline.priority === "high" 
-                                ? "bg-red-100" 
-                                : deadline.priority === "medium"
-                                ? "bg-amber-100"
-                                : "bg-green-100"
-                            } flex flex-col items-center justify-center mr-3`}
-                          >
-                            <span className="text-xs font-medium">
-                              {format(deadline.date, "MMM")}
-                            </span>
-                            <span className="text-base font-bold">
-                              {format(deadline.date, "d")}
-                            </span>
-                          </div>
-                          <div>
-                            <h4 className="font-medium">{deadline.title}</h4>
-                            {deadline.company && (
-                              <p className="text-sm text-gray-600">{deadline.company}</p>
-                            )}
-                            <p className="text-xs text-gray-500 mt-1">
-                              {format(deadline.date, "EEEE, MMMM d")}
-                            </p>
-                          </div>
-                        </div>
-                      ))
-                    }
-                  </TabsContent>
-                </Tabs>
-                
-                <div className="mt-6 flex justify-center">
-                  <Button className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white">
-                    Add New Reminder
-                  </Button>
-                </div>
+                        )}
+                      </TabsContent>
+                      
+                      <TabsContent value="applications" className="space-y-4">
+                        {upcomingDeadlines
+                          .filter(d => d.type === "application")
+                          .map(deadline => (
+                            <div 
+                              key={deadline.id} 
+                              className="p-3 border rounded-md flex items-start"
+                              onClick={() => {
+                                setDate(deadline.date);
+                                setSelectedEvents(getEventsForDate(deadline.date, isLoggedIn));
+                              }}
+                            >
+                              <div 
+                                className={`h-10 w-10 rounded-md ${
+                                  deadline.priority === "high" 
+                                    ? "bg-red-100" 
+                                    : deadline.priority === "medium"
+                                    ? "bg-amber-100"
+                                    : "bg-green-100"
+                                } flex flex-col items-center justify-center mr-3`}
+                              >
+                                <span className="text-xs font-medium">
+                                  {format(deadline.date, "MMM")}
+                                </span>
+                                <span className="text-base font-bold">
+                                  {format(deadline.date, "d")}
+                                </span>
+                              </div>
+                              <div>
+                                <h4 className="font-medium">{deadline.title}</h4>
+                                {deadline.company && (
+                                  <p className="text-sm text-gray-600">{deadline.company}</p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {format(deadline.date, "EEEE, MMMM d")}
+                                </p>
+                              </div>
+                            </div>
+                          ))
+                        }
+                      </TabsContent>
+                      
+                      <TabsContent value="interviews" className="space-y-4">
+                        {upcomingDeadlines
+                          .filter(d => d.type === "interview")
+                          .map(deadline => (
+                            <div 
+                              key={deadline.id} 
+                              className="p-3 border rounded-md flex items-start"
+                              onClick={() => {
+                                setDate(deadline.date);
+                                setSelectedEvents(getEventsForDate(deadline.date, isLoggedIn));
+                              }}
+                            >
+                              <div 
+                                className={`h-10 w-10 rounded-md ${
+                                  deadline.priority === "high" 
+                                    ? "bg-red-100" 
+                                    : deadline.priority === "medium"
+                                    ? "bg-amber-100"
+                                    : "bg-green-100"
+                                } flex flex-col items-center justify-center mr-3`}
+                              >
+                                <span className="text-xs font-medium">
+                                  {format(deadline.date, "MMM")}
+                                </span>
+                                <span className="text-base font-bold">
+                                  {format(deadline.date, "d")}
+                                </span>
+                              </div>
+                              <div>
+                                <h4 className="font-medium">{deadline.title}</h4>
+                                {deadline.company && (
+                                  <p className="text-sm text-gray-600">{deadline.company}</p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {format(deadline.date, "EEEE, MMMM d")}
+                                </p>
+                              </div>
+                            </div>
+                          ))
+                        }
+                      </TabsContent>
+                    </Tabs>
+                    
+                    <div className="mt-6 flex justify-center">
+                      <Button className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white">
+                        Add New Reminder
+                      </Button>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
             
@@ -394,26 +431,32 @@ const CalendarPage = () => {
                 <CardTitle className="text-xl text-unisphere-darkBlue">Calendar Settings</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span>Email Notifications</span>
-                    <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-unisphere-blue focus:ring-offset-2">
-                      <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6"></span>
+                {!isLoggedIn ? (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500">Login to access calendar settings</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span>Email Notifications</span>
+                      <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-unisphere-blue focus:ring-offset-2">
+                        <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6"></span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>SMS Notifications</span>
+                      <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-unisphere-blue focus:ring-offset-2">
+                        <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1"></span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Sync with Google Calendar</span>
+                      <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-unisphere-blue transition-colors focus:outline-none focus:ring-2 focus:ring-unisphere-blue focus:ring-offset-2">
+                        <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6"></span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span>SMS Notifications</span>
-                    <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-unisphere-blue focus:ring-offset-2">
-                      <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1"></span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Sync with Google Calendar</span>
-                    <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-unisphere-blue transition-colors focus:outline-none focus:ring-2 focus:ring-unisphere-blue focus:ring-offset-2">
-                      <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6"></span>
-                    </div>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>

@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { Shield } from "lucide-react";
 
 const AdminLogin = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -37,6 +38,8 @@ const AdminLogin = () => {
         description: "Redirecting to admin dashboard...",
       });
       setIsSubmitting(false);
+      // Redirect to admin dashboard
+      navigate("/admin/dashboard");
     }, 1500);
   };
 

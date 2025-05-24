@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Menu, X } from 'lucide-react';
 import { useIsMobile } from "@/hooks/use-mobile";
+import Chatbot from './Chatbot';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -41,6 +42,9 @@ const Header = () => {
                   <Link to="/jobs" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
                     Jobs
                   </Link>
+                  <Link to="/resume" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
+                    Resume Builder
+                  </Link>
                   <Link to="/calendar" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
                     Calendar
                   </Link>
@@ -65,6 +69,9 @@ const Header = () => {
               <Link to="/jobs" className="text-unisphere-darkBlue hover:text-unisphere-blue transition-colors">
                 Jobs
               </Link>
+              <Link to="/resume" className="text-unisphere-darkBlue hover:text-unisphere-blue transition-colors">
+                Resume Builder
+              </Link>
               <Link to="/calendar" className="text-unisphere-darkBlue hover:text-unisphere-blue transition-colors">
                 Calendar
               </Link>
@@ -84,6 +91,7 @@ const Header = () => {
           </div>
         )}
       </div>
+      <Chatbot />
     </header>
   );
 };

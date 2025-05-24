@@ -26,7 +26,7 @@ const Index = () => {
                   </Button>
                 </Link>
                 <Link to="/jobs">
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 w-full sm:w-auto">
+                  <Button size="lg" className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white w-full sm:w-auto">
                     Browse Jobs
                   </Button>
                 </Link>
@@ -132,7 +132,7 @@ const Index = () => {
                   </Button>
                 </Link>
                 <Link to="/login">
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 w-full sm:w-auto">
+                  <Button size="lg" className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white w-full sm:w-auto">
                     Login
                   </Button>
                 </Link>

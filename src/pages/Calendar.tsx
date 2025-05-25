@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,8 +9,8 @@ import { Calendar as CalendarIcon, Clock, Info, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
 
-// Mock deadline data - only shown when logged in
-const deadlines = [
+// Mock deadline data - shown when logged in
+const mockDeadlines = [
   {
     id: 1,
     title: "Software Engineer Intern Application",
@@ -56,7 +56,7 @@ const deadlines = [
 // Get events for specific date
 const getEventsForDate = (date: Date, isLoggedIn: boolean) => {
   if (!isLoggedIn) return [];
-  return deadlines.filter(deadline => 
+  return mockDeadlines.filter(deadline => 
     deadline.date.getDate() === date.getDate() && 
     deadline.date.getMonth() === date.getMonth() && 
     deadline.date.getFullYear() === date.getFullYear()
@@ -67,7 +67,7 @@ const getEventsForDate = (date: Date, isLoggedIn: boolean) => {
 const getUpcomingDeadlines = (isLoggedIn: boolean) => {
   if (!isLoggedIn) return [];
   const today = new Date();
-  return [...deadlines]
+  return [...mockDeadlines]
     .filter(deadline => deadline.date >= today)
     .sort((a, b) => a.date.getTime() - b.date.getTime());
 };
@@ -77,7 +77,7 @@ const getHighlightedDates = (isLoggedIn: boolean) => {
   if (!isLoggedIn) return {};
   const dates: Record<string, { date: Date; priority: string }[]> = {};
   
-  deadlines.forEach(deadline => {
+  mockDeadlines.forEach(deadline => {
     const dateStr = format(deadline.date, "yyyy-MM-dd");
     if (!dates[dateStr]) {
       dates[dateStr] = [];
@@ -105,11 +105,28 @@ const priorityColors: Record<string, string> = {
 };
 
 const CalendarPage = () => {
-  // Simulate no user logged in
-  const isLoggedIn = false;
-  
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [date, setDate] = useState<Date>(new Date());
-  const [selectedEvents, setSelectedEvents] = useState(getEventsForDate(new Date(), isLoggedIn));
+  const [selectedEvents, setSelectedEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const loggedIn = localStorage.getItem('userLoggedIn') === 'true';
+      const role = localStorage.getItem('userRole');
+      setIsLoggedIn(loggedIn);
+      setUserRole(role);
+      setSelectedEvents(getEventsForDate(new Date(), loggedIn));
+    };
+
+    checkAuth();
+    window.addEventListener('storage', checkAuth);
+
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+    };
+  }, []);
+
   const highlightedDates = getHighlightedDates(isLoggedIn);
   const upcomingDeadlines = getUpcomingDeadlines(isLoggedIn);
 
@@ -285,7 +302,7 @@ const CalendarPage = () => {
                           upcomingDeadlines.map(deadline => (
                             <div 
                               key={deadline.id} 
-                              className="p-3 border rounded-md flex items-start"
+                              className="p-3 border rounded-md flex items-start cursor-pointer hover:bg-gray-50"
                               onClick={() => {
                                 setDate(deadline.date);
                                 setSelectedEvents(getEventsForDate(deadline.date, isLoggedIn));
@@ -298,7 +315,7 @@ const CalendarPage = () => {
                                     : deadline.priority === "medium"
                                     ? "bg-amber-100"
                                     : "bg-green-100"
-                                } flex items-center justify-center mr-3`}
+                                } flex flex-col items-center justify-center mr-3`}
                               >
                                 <span className="text-xs font-medium">
                                   {format(deadline.date, "MMM")}
@@ -337,7 +354,7 @@ const CalendarPage = () => {
                           .map(deadline => (
                             <div 
                               key={deadline.id} 
-                              className="p-3 border rounded-md flex items-start"
+                              className="p-3 border rounded-md flex items-start cursor-pointer hover:bg-gray-50"
                               onClick={() => {
                                 setDate(deadline.date);
                                 setSelectedEvents(getEventsForDate(deadline.date, isLoggedIn));
@@ -379,7 +396,7 @@ const CalendarPage = () => {
                           .map(deadline => (
                             <div 
                               key={deadline.id} 
-                              className="p-3 border rounded-md flex items-start"
+                              className="p-3 border rounded-md flex items-start cursor-pointer hover:bg-gray-50"
                               onClick={() => {
                                 setDate(deadline.date);
                                 setSelectedEvents(getEventsForDate(deadline.date, isLoggedIn));

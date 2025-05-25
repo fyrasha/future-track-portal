@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Table, 
   TableBody, 
@@ -28,10 +27,58 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import MainLayout from "@/components/MainLayout";
 import { Link } from "react-router-dom";
 
+// Mock applications data for logged in users
+const mockApplications = [
+  {
+    id: 1,
+    jobTitle: "Frontend Developer",
+    company: "TechCorp Malaysia",
+    location: "Kuala Lumpur, MY",
+    appliedDate: "2025-05-20",
+    status: "Under Review",
+    nextStep: "Interview scheduled for May 30"
+  },
+  {
+    id: 2,
+    jobTitle: "Software Engineer Intern",
+    company: "StartupKL",
+    location: "Remote",
+    appliedDate: "2025-05-18",
+    status: "Applied",
+    nextStep: "Waiting for response"
+  },
+  {
+    id: 3,
+    jobTitle: "UI/UX Designer",
+    company: "Creative Solutions",
+    location: "Penang, MY",
+    appliedDate: "2025-05-15",
+    status: "Interview Scheduled",
+    nextStep: "Technical interview on June 2"
+  }
+];
+
 const Applications = () => {
-  // Simulate no user logged in
-  const isLoggedIn = false;
-  const applications: any[] = [];
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const loggedIn = localStorage.getItem('userLoggedIn') === 'true';
+      const role = localStorage.getItem('userRole');
+      setIsLoggedIn(loggedIn);
+      setUserRole(role);
+    };
+
+    checkAuth();
+    window.addEventListener('storage', checkAuth);
+
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+    };
+  }, []);
+
+  const applications = isLoggedIn ? mockApplications : [];
 
   const getStatusBadge = (status: string) => {
     switch (status) {

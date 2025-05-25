@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayout from "@/components/MainLayout";
 import { 
   Card, 
@@ -20,7 +20,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 
 // Mock career path recommendations
-const careerPaths = [
+const mockCareerPaths = [
   {
     id: 1,
     title: "Software Development",
@@ -38,29 +38,11 @@ const careerPaths = [
     skills: ["Python", "R", "Statistics", "Machine Learning", "SQL"],
     roles: ["Data Analyst", "Data Scientist", "Business Intelligence Analyst"],
     growthRate: "Much faster than average"
-  },
-  {
-    id: 3,
-    title: "UX/UI Design",
-    description: "Create intuitive, accessible, and visually appealing digital experiences.",
-    matchScore: 82,
-    skills: ["UI Design", "Wireframing", "User Research", "Figma", "Adobe XD"],
-    roles: ["UX Designer", "UI Designer", "Product Designer"],
-    growthRate: "Faster than average"
-  },
-  {
-    id: 4,
-    title: "Digital Marketing",
-    description: "Promote products, services, and brands through digital channels.",
-    matchScore: 75,
-    skills: ["Social Media Marketing", "SEO", "Content Creation", "Analytics", "Email Marketing"],
-    roles: ["Digital Marketing Specialist", "SEO Specialist", "Content Strategist"],
-    growthRate: "Average"
   }
 ];
 
 // Mock recommended jobs based on skills and interests
-const recommendedJobs = [
+const mockRecommendedJobs = [
   {
     id: 101,
     title: "Junior React Developer",
@@ -76,30 +58,32 @@ const recommendedJobs = [
     location: "San Francisco, CA",
     matchScore: 89,
     postedDate: "2025-05-16"
-  },
-  {
-    id: 103,
-    title: "Junior Data Analyst",
-    company: "DataViz Corp",
-    location: "Boston, MA",
-    matchScore: 85,
-    postedDate: "2025-05-17"
-  },
-  {
-    id: 104,
-    title: "UI Design Associate",
-    company: "Creative Interfaces",
-    location: "Chicago, IL",
-    matchScore: 82,
-    postedDate: "2025-05-15"
   }
 ];
 
 const Recommendations = () => {
   const [activeTab, setActiveTab] = useState<"careers" | "jobs">("careers");
-  
-  // Simulate no user logged in
-  const isLoggedIn = false;
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const loggedIn = localStorage.getItem('userLoggedIn') === 'true';
+      const role = localStorage.getItem('userRole');
+      setIsLoggedIn(loggedIn);
+      setUserRole(role);
+    };
+
+    checkAuth();
+    window.addEventListener('storage', checkAuth);
+
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+    };
+  }, []);
+
+  const careerPaths = isLoggedIn ? mockCareerPaths : [];
+  const recommendedJobs = isLoggedIn ? mockRecommendedJobs : [];
 
   if (!isLoggedIn) {
     return (
@@ -142,10 +126,6 @@ const Recommendations = () => {
       </MainLayout>
     );
   }
-
-  // This would be the logged-in view (keeping original structure for when login is implemented)
-  const careerPaths: any[] = [];
-  const recommendedJobs: any[] = [];
 
   return (
     <MainLayout>

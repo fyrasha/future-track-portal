@@ -46,6 +46,7 @@ const jobListings = [
     id: 1,
     title: "Software Engineer Intern",
     company: "TechCorp Malaysia",
+    companyId: "1",
     location: "Kuala Lumpur, Malaysia",
     type: "Internship",
     postedDate: "2025-05-15",
@@ -56,6 +57,7 @@ const jobListings = [
     id: 2,
     title: "Data Analyst",
     company: "Analytics Pro",
+    companyId: "2",
     location: "Petaling Jaya, Malaysia",
     type: "Full-time",
     postedDate: "2025-05-10",
@@ -222,7 +224,12 @@ const Jobs = () => {
                       <CardTitle className="text-xl text-unisphere-darkBlue">{job.title}</CardTitle>
                       <CardDescription className="flex items-center mt-1">
                         <Building className="h-4 w-4 mr-1" />
-                        {job.company}
+                        <Link 
+                          to={`/company/${job.companyId}`}
+                          className="text-unisphere-blue hover:underline"
+                        >
+                          {job.company}
+                        </Link>
                       </CardDescription>
                     </div>
                     <div className="flex gap-2">

@@ -86,12 +86,20 @@ const Header = () => {
                       <Link to="/recommendations" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
                         Recommendations
                       </Link>
+                      <Link to="/profile" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
+                        Profile
+                      </Link>
                     </>
                   )}
                   {isLoggedIn && userRole === 'admin' && (
-                    <Link to="/admin/dashboard" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
-                      Admin Dashboard
-                    </Link>
+                    <>
+                      <Link to="/admin/dashboard" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
+                        Admin Dashboard
+                      </Link>
+                      <Link to="/admin/analytics" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
+                        Analytics
+                      </Link>
+                    </>
                   )}
                   <div className="border-t border-gray-200 mt-2 pt-2">
                     {isLoggedIn ? (
@@ -150,9 +158,14 @@ const Header = () => {
                 </>
               )}
               {isLoggedIn && userRole === 'admin' && (
-                <Link to="/admin/dashboard" className="text-unisphere-darkBlue hover:text-unisphere-blue transition-colors">
-                  Admin Dashboard
-                </Link>
+                <>
+                  <Link to="/admin/dashboard" className="text-unisphere-darkBlue hover:text-unisphere-blue transition-colors">
+                    Admin Dashboard
+                  </Link>
+                  <Link to="/admin/analytics" className="text-unisphere-darkBlue hover:text-unisphere-blue transition-colors">
+                    Analytics
+                  </Link>
+                </>
               )}
             </nav>
             <div className="flex items-center space-x-4">
@@ -162,6 +175,13 @@ const Header = () => {
                     <User className="h-4 w-4 mr-1" />
                     <span className="capitalize text-sm">{userRole}</span>
                   </div>
+                  {userRole === 'student' && (
+                    <Link to="/profile">
+                      <Button variant="outline" className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10">
+                        Profile
+                      </Button>
+                    </Link>
+                  )}
                   <Button
                     onClick={handleLogout}
                     variant="outline"

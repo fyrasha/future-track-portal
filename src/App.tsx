@@ -16,6 +16,9 @@ import AIResumeScreen from "./pages/AIResumeScreen";
 import Applications from "./pages/Applications";
 import Recommendations from "./pages/Recommendations";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminAnalytics from "./pages/AdminAnalytics";
+import Profile from "./pages/Profile";
+import CompanyDetails from "./pages/CompanyDetails";
 import NotFound from "./pages/NotFound";
 
 // Create a client outside of the component
@@ -34,12 +37,16 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/admin" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/analytics" element={<AdminAnalytics />} />
             <Route path="/jobs" element={<Jobs />} />
+            <Route path="/jobs/:id" element={<Jobs />} />
+            <Route path="/company/:id" element={<CompanyDetails />} />
             <Route path="/resume" element={<Resume />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/ai-resume-screen" element={<AIResumeScreen />} />
             <Route path="/applications" element={<Applications />} />
             <Route path="/recommendations" element={<Recommendations />} />
+            <Route path="/profile" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

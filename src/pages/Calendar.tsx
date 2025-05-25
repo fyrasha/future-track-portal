@@ -1,114 +1,59 @@
+
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar as CalendarIcon, Clock, Info, LogIn } from "lucide-react";
-import { Link } from "react-router-dom";
+import { 
+  Clock, 
+  Calendar as CalendarIcon, 
+  MapPin, 
+  Building,
+  Plus,
+  LogIn
+} from "lucide-react";
 import MainLayout from "@/components/MainLayout";
+import ReminderSystem from "@/components/ReminderSystem";
+import { Link } from "react-router-dom";
 
-// Mock deadline data - shown when logged in
-const mockDeadlines = [
+// Mock calendar events
+const mockEvents = [
   {
     id: 1,
-    title: "Software Engineer Intern Application",
+    title: "Technical Interview",
     company: "TechCorp Malaysia",
-    type: "application",
-    date: new Date(2025, 5, 30), // June 30, 2025
-    priority: "high"
+    date: "2025-05-30",
+    time: "14:00 - 15:30",
+    type: "interview",
+    location: "Zoom Meeting",
+    status: "confirmed"
   },
   {
     id: 2,
-    title: "Data Analyst Application",
-    company: "Analytics Pro KL",
-    type: "application",
-    date: new Date(2025, 5, 15), // June 15, 2025
-    priority: "medium"
+    title: "Application Deadline",
+    company: "Analytics Pro",
+    date: "2025-06-15", 
+    time: "23:59",
+    type: "deadline",
+    location: "Online",
+    status: "pending"
   },
   {
     id: 3,
-    title: "Resume Update",
-    company: null,
-    type: "task",
-    date: new Date(2025, 4, 25), // May 25, 2025
-    priority: "low"
-  },
-  {
-    id: 4,
     title: "Career Fair",
-    company: "University Malaya Career Center",
+    company: "University of Malaya",
+    date: "2025-06-20",
+    time: "09:00 - 17:00",
     type: "event",
-    date: new Date(2025, 6, 10), // July 10, 2025
-    priority: "medium"
-  },
-  {
-    id: 5,
-    title: "Interview",
-    company: "TechCorp Malaysia",
-    type: "interview",
-    date: new Date(2025, 6, 5), // July 5, 2025
-    priority: "high"
+    location: "Main Hall, UM",
+    status: "registered"
   }
 ];
 
-// Get events for specific date
-const getEventsForDate = (date: Date, isLoggedIn: boolean) => {
-  if (!isLoggedIn) return [];
-  return mockDeadlines.filter(deadline => 
-    deadline.date.getDate() === date.getDate() && 
-    deadline.date.getMonth() === date.getMonth() && 
-    deadline.date.getFullYear() === date.getFullYear()
-  );
-};
-
-// Function to get upcoming deadlines sorted by date
-const getUpcomingDeadlines = (isLoggedIn: boolean) => {
-  if (!isLoggedIn) return [];
-  const today = new Date();
-  return [...mockDeadlines]
-    .filter(deadline => deadline.date >= today)
-    .sort((a, b) => a.date.getTime() - b.date.getTime());
-};
-
-// Function to get highlighted dates for the calendar
-const getHighlightedDates = (isLoggedIn: boolean) => {
-  if (!isLoggedIn) return {};
-  const dates: Record<string, { date: Date; priority: string }[]> = {};
-  
-  mockDeadlines.forEach(deadline => {
-    const dateStr = format(deadline.date, "yyyy-MM-dd");
-    if (!dates[dateStr]) {
-      dates[dateStr] = [];
-    }
-    dates[dateStr].push({
-      date: deadline.date,
-      priority: deadline.priority
-    });
-  });
-  
-  return dates;
-};
-
-const typeColors: Record<string, string> = {
-  application: "bg-blue-100 text-blue-800",
-  task: "bg-green-100 text-green-800",
-  event: "bg-purple-100 text-purple-800",
-  interview: "bg-amber-100 text-amber-800"
-};
-
-const priorityColors: Record<string, string> = {
-  high: "bg-red-500",
-  medium: "bg-amber-500",
-  low: "bg-green-500"
-};
-
 const CalendarPage = () => {
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [date, setDate] = useState<Date>(new Date());
-  const [selectedEvents, setSelectedEvents] = useState<any[]>([]);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -116,7 +61,6 @@ const CalendarPage = () => {
       const role = localStorage.getItem('userRole');
       setIsLoggedIn(loggedIn);
       setUserRole(role);
-      setSelectedEvents(getEventsForDate(new Date(), loggedIn));
     };
 
     checkAuth();
@@ -127,353 +71,227 @@ const CalendarPage = () => {
     };
   }, []);
 
-  const highlightedDates = getHighlightedDates(isLoggedIn);
-  const upcomingDeadlines = getUpcomingDeadlines(isLoggedIn);
+  const events = isLoggedIn ? mockEvents : [];
 
-  const handleDateSelect = (newDate: Date | undefined) => {
-    if (newDate) {
-      setDate(newDate);
-      setSelectedEvents(getEventsForDate(newDate, isLoggedIn));
+  // Get events for selected date
+  const selectedDateEvents = selectedDate 
+    ? events.filter(event => 
+        new Date(event.date).toDateString() === selectedDate.toDateString()
+      )
+    : [];
+
+  // Get upcoming events (next 7 days)
+  const upcomingEvents = events.filter(event => {
+    const eventDate = new Date(event.date);
+    const today = new Date();
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return eventDate >= today && eventDate <= nextWeek;
+  }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Get dates that have events for calendar highlighting
+  const eventDates = events.map(event => new Date(event.date));
+
+  const getEventTypeColor = (type: string) => {
+    switch (type) {
+      case 'interview':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'deadline':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'event':
+        return 'bg-green-100 text-green-800 border-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  // Custom day rendering for the calendar
-  const dayRender = (day: Date): React.ReactNode => {
-    if (!isLoggedIn) return null;
-    
-    const dateString = format(day, "yyyy-MM-dd");
-    const events = highlightedDates[dateString];
-    
-    if (!events) return null;
-    
-    // Find the highest priority
-    let highestPriority = "low";
-    events.forEach(event => {
-      if (event.priority === "high") highestPriority = "high";
-      else if (event.priority === "medium" && highestPriority !== "high") highestPriority = "medium";
-    });
-    
-    return (
-      <div className="absolute bottom-0 left-0 right-0 flex justify-center">
-        <div className={`w-1.5 h-1.5 rounded-full ${priorityColors[highestPriority]}`}></div>
-      </div>
-    );
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'confirmed':
+        return <Badge className="bg-green-100 text-green-800">Confirmed</Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      case 'registered':
+        return <Badge className="bg-blue-100 text-blue-800">Registered</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
   };
+
+  if (!isLoggedIn) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto py-8 px-4">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-2">Calendar</h1>
+            <p className="text-gray-600">Keep track of interviews, deadlines, and important events</p>
+          </div>
+
+          <Card className="max-w-md mx-auto text-center">
+            <CardHeader>
+              <div className="flex justify-center mb-4">
+                <div className="bg-unisphere-blue/10 p-4 rounded-full">
+                  <CalendarIcon className="h-12 w-12 text-unisphere-blue" />
+                </div>
+              </div>
+              <CardTitle className="text-xl text-unisphere-darkBlue">Access Your Calendar</CardTitle>
+              <CardDescription>
+                Please log in to view your personalized calendar with interviews and deadlines
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <Link to="/login">
+                  <Button className="w-full bg-unisphere-darkBlue hover:bg-unisphere-blue text-white">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Login to Access Calendar
+                  </Button>
+                </Link>
+                <Link to="/jobs">
+                  <Button variant="outline" className="w-full border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10">
+                    Browse Jobs
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
       <div className="container mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-8">Calendar & Deadlines</h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Calendar & Date Details */}
-          <div className="md:col-span-2 space-y-6">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-2">Calendar</h1>
+          <p className="text-gray-600">Keep track of interviews, deadlines, and important events</p>
+        </div>
+
+        {/* Reminder System */}
+        <ReminderSystem />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Calendar */}
+          <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-xl text-unisphere-darkBlue">Application Calendar</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Calendar View</CardTitle>
+                  <Button className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Event
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-7 gap-6">
-                  <div className="md:col-span-3">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={handleDateSelect}
-                      className="border rounded-md"
-                      components={{
-                        DayContent: props => (
-                          <div className="relative h-9 w-9 p-0 font-normal">
-                            {props.date.getDate()}
-                            {dayRender(props.date)}
-                          </div>
-                        ),
-                      }}
-                    />
-                    {isLoggedIn && (
-                      <div className="mt-4 flex flex-wrap gap-3">
-                        <div className="flex items-center gap-1.5">
-                          <div className={`w-3 h-3 rounded-full ${priorityColors.high}`}></div>
-                          <span className="text-sm text-gray-600">High Priority</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className={`w-3 h-3 rounded-full ${priorityColors.medium}`}></div>
-                          <span className="text-sm text-gray-600">Medium Priority</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className={`w-3 h-3 rounded-full ${priorityColors.low}`}></div>
-                          <span className="text-sm text-gray-600">Low Priority</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="md:col-span-4">
-                    <div className="mb-3 flex items-center">
-                      <CalendarIcon className="h-5 w-5 mr-2 text-unisphere-blue" />
-                      <h3 className="text-lg font-medium">
-                        {format(date, "MMMM d, yyyy")}
-                      </h3>
-                    </div>
-                    
-                    {!isLoggedIn ? (
-                      <div className="text-center py-12 bg-gray-50 rounded-lg">
-                        <LogIn className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                        <h3 className="text-lg font-medium text-gray-700 mb-1">Login Required</h3>
-                        <p className="text-gray-500 mb-4">Please log in to view your calendar events and deadlines.</p>
-                        <Link to="/login">
-                          <Button className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white">
-                            <LogIn className="mr-2 h-4 w-4" />
-                            Login
-                          </Button>
-                        </Link>
-                      </div>
-                    ) : selectedEvents.length > 0 ? (
-                      <div className="space-y-4">
-                        {selectedEvents.map(event => (
-                          <div 
-                            key={event.id} 
-                            className={`p-4 rounded-md border ${
-                              event.priority === "high" 
-                                ? "border-red-200 bg-red-50" 
-                                : event.priority === "medium"
-                                ? "border-amber-200 bg-amber-50"
-                                : "border-green-200 bg-green-50"
-                            }`}
-                          >
-                            <div className="flex justify-between items-start">
-                              <h4 className="font-medium">{event.title}</h4>
-                              <Badge className={typeColors[event.type]}>
-                                {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
-                              </Badge>
-                            </div>
-                            {event.company && (
-                              <p className="text-sm text-gray-600 mt-1">{event.company}</p>
-                            )}
-                            <div className="flex items-center mt-3">
-                              <Clock className="h-4 w-4 mr-1 text-gray-500" />
-                              <span className="text-sm text-gray-500">
-                                {format(event.date, "h:mm a")}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-12 bg-gray-50 rounded-lg">
-                        <CalendarIcon className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                        <h3 className="text-lg font-medium text-gray-700 mb-1">No events</h3>
-                        <p className="text-gray-500">There are no events scheduled for this day.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  className="rounded-md border w-full"
+                  modifiers={{
+                    eventDay: eventDates
+                  }}
+                  modifiersStyles={{
+                    eventDay: { 
+                      backgroundColor: '#dbeafe', 
+                      color: '#1e40af',
+                      fontWeight: 'bold'
+                    }
+                  }}
+                />
               </CardContent>
             </Card>
+
+            {/* Selected Date Events */}
+            {selectedDate && (
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle>
+                    Events for {selectedDate.toLocaleDateString()}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedDateEvents.length > 0 ? (
+                    <div className="space-y-4">
+                      {selectedDateEvents.map((event) => (
+                        <div key={event.id} className={`p-4 rounded-lg border ${getEventTypeColor(event.type)}`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-medium">{event.title}</h4>
+                            {getStatusBadge(event.status)}
+                          </div>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex items-center">
+                              <Building className="h-4 w-4 mr-2" />
+                              {event.company}
+                            </div>
+                            <div className="flex items-center">
+                              <Clock className="h-4 w-4 mr-2" />
+                              {event.time}
+                            </div>
+                            <div className="flex items-center">
+                              <MapPin className="h-4 w-4 mr-2" />
+                              {event.location}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">No events scheduled for this date</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
-          
+
+          {/* Upcoming Events Sidebar */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-xl text-unisphere-darkBlue">Upcoming Deadlines</CardTitle>
+                <CardTitle>Upcoming Events</CardTitle>
+                <CardDescription>Next 7 days</CardDescription>
               </CardHeader>
               <CardContent>
-                {!isLoggedIn ? (
-                  <div className="text-center py-8">
-                    <LogIn className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                    <p className="text-gray-500 mb-4">Login to view your deadlines</p>
-                    <Link to="/login">
-                      <Button className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white">
-                        <LogIn className="mr-2 h-4 w-4" />
-                        Login
-                      </Button>
-                    </Link>
+                {upcomingEvents.length > 0 ? (
+                  <div className="space-y-3">
+                    {upcomingEvents.map((event) => (
+                      <div key={event.id} className="border-l-4 border-unisphere-blue pl-4 py-2">
+                        <h5 className="font-medium text-sm">{event.title}</h5>
+                        <p className="text-xs text-gray-600 mb-1">{event.company}</p>
+                        <div className="flex items-center text-xs text-gray-500">
+                          <CalendarIcon className="h-3 w-3 mr-1" />
+                          {new Date(event.date).toLocaleDateString()} at {event.time.split(' - ')[0]}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
-                  <>
-                    <Tabs defaultValue="all">
-                      <TabsList className="w-full mb-4">
-                        <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-                        <TabsTrigger value="applications" className="flex-1">Applications</TabsTrigger>
-                        <TabsTrigger value="interviews" className="flex-1">Interviews</TabsTrigger>
-                      </TabsList>
-                      
-                      <TabsContent value="all" className="space-y-4">
-                        {upcomingDeadlines.length > 0 ? (
-                          upcomingDeadlines.map(deadline => (
-                            <div 
-                              key={deadline.id} 
-                              className="p-3 border rounded-md flex items-start cursor-pointer hover:bg-gray-50"
-                              onClick={() => {
-                                setDate(deadline.date);
-                                setSelectedEvents(getEventsForDate(deadline.date, isLoggedIn));
-                              }}
-                            >
-                              <div 
-                                className={`h-10 w-10 rounded-md ${
-                                  deadline.priority === "high" 
-                                    ? "bg-red-100" 
-                                    : deadline.priority === "medium"
-                                    ? "bg-amber-100"
-                                    : "bg-green-100"
-                                } flex flex-col items-center justify-center mr-3`}
-                              >
-                                <span className="text-xs font-medium">
-                                  {format(deadline.date, "MMM")}
-                                </span>
-                                <span className="text-base font-bold">
-                                  {format(deadline.date, "d")}
-                                </span>
-                              </div>
-                              <div>
-                                <div className="flex items-center">
-                                  <h4 className="font-medium">{deadline.title}</h4>
-                                  <Badge className={`ml-2 ${typeColors[deadline.type]}`} variant="outline">
-                                    {deadline.type.charAt(0).toUpperCase() + deadline.type.slice(1)}
-                                  </Badge>
-                                </div>
-                                {deadline.company && (
-                                  <p className="text-sm text-gray-600">{deadline.company}</p>
-                                )}
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {format(deadline.date, "EEEE, MMMM d")}
-                                </p>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-center py-8">
-                            <Info className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                            <p className="text-gray-500">No upcoming deadlines</p>
-                          </div>
-                        )}
-                      </TabsContent>
-                      
-                      <TabsContent value="applications" className="space-y-4">
-                        {upcomingDeadlines
-                          .filter(d => d.type === "application")
-                          .map(deadline => (
-                            <div 
-                              key={deadline.id} 
-                              className="p-3 border rounded-md flex items-start cursor-pointer hover:bg-gray-50"
-                              onClick={() => {
-                                setDate(deadline.date);
-                                setSelectedEvents(getEventsForDate(deadline.date, isLoggedIn));
-                              }}
-                            >
-                              <div 
-                                className={`h-10 w-10 rounded-md ${
-                                  deadline.priority === "high" 
-                                    ? "bg-red-100" 
-                                    : deadline.priority === "medium"
-                                    ? "bg-amber-100"
-                                    : "bg-green-100"
-                                } flex flex-col items-center justify-center mr-3`}
-                              >
-                                <span className="text-xs font-medium">
-                                  {format(deadline.date, "MMM")}
-                                </span>
-                                <span className="text-base font-bold">
-                                  {format(deadline.date, "d")}
-                                </span>
-                              </div>
-                              <div>
-                                <h4 className="font-medium">{deadline.title}</h4>
-                                {deadline.company && (
-                                  <p className="text-sm text-gray-600">{deadline.company}</p>
-                                )}
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {format(deadline.date, "EEEE, MMMM d")}
-                                </p>
-                              </div>
-                            </div>
-                          ))
-                        }
-                      </TabsContent>
-                      
-                      <TabsContent value="interviews" className="space-y-4">
-                        {upcomingDeadlines
-                          .filter(d => d.type === "interview")
-                          .map(deadline => (
-                            <div 
-                              key={deadline.id} 
-                              className="p-3 border rounded-md flex items-start cursor-pointer hover:bg-gray-50"
-                              onClick={() => {
-                                setDate(deadline.date);
-                                setSelectedEvents(getEventsForDate(deadline.date, isLoggedIn));
-                              }}
-                            >
-                              <div 
-                                className={`h-10 w-10 rounded-md ${
-                                  deadline.priority === "high" 
-                                    ? "bg-red-100" 
-                                    : deadline.priority === "medium"
-                                    ? "bg-amber-100"
-                                    : "bg-green-100"
-                                } flex flex-col items-center justify-center mr-3`}
-                              >
-                                <span className="text-xs font-medium">
-                                  {format(deadline.date, "MMM")}
-                                </span>
-                                <span className="text-base font-bold">
-                                  {format(deadline.date, "d")}
-                                </span>
-                              </div>
-                              <div>
-                                <h4 className="font-medium">{deadline.title}</h4>
-                                {deadline.company && (
-                                  <p className="text-sm text-gray-600">{deadline.company}</p>
-                                )}
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {format(deadline.date, "EEEE, MMMM d")}
-                                </p>
-                              </div>
-                            </div>
-                          ))
-                        }
-                      </TabsContent>
-                    </Tabs>
-                    
-                    <div className="mt-6 flex justify-center">
-                      <Button className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white">
-                        Add New Reminder
-                      </Button>
-                    </div>
-                  </>
+                  <p className="text-gray-500 text-sm">No upcoming events</p>
                 )}
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader>
-                <CardTitle className="text-xl text-unisphere-darkBlue">Calendar Settings</CardTitle>
+                <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
-              <CardContent>
-                {!isLoggedIn ? (
-                  <div className="text-center py-4">
-                    <p className="text-gray-500">Login to access calendar settings</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span>Email Notifications</span>
-                      <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-unisphere-blue focus:ring-offset-2">
-                        <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6"></span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>SMS Notifications</span>
-                      <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-unisphere-blue focus:ring-offset-2">
-                        <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1"></span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Sync with Google Calendar</span>
-                      <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-unisphere-blue transition-colors focus:outline-none focus:ring-2 focus:ring-unisphere-blue focus:ring-offset-2">
-                        <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6"></span>
-                      </div>
-                    </div>
-                  </div>
-                )}
+              <CardContent className="space-y-3">
+                <Link to="/applications">
+                  <Button variant="outline" className="w-full border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10">
+                    View Applications
+                  </Button>
+                </Link>
+                <Link to="/jobs">
+                  <Button variant="outline" className="w-full border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10">
+                    Browse Jobs
+                  </Button>
+                </Link>
+                <Link to="/resume">
+                  <Button variant="outline" className="w-full border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10">
+                    Update Resume
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </div>

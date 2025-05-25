@@ -26,8 +26,7 @@ import {
   Calendar, 
   CheckCircle2, 
   Clock, 
-  Star,
-  Lock
+  Star
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import { 
@@ -111,9 +110,16 @@ const Jobs = () => {
   const [selectedJob, setSelectedJob] = useState<typeof jobListings[0] | null>(null);
   const [applicationDialogOpen, setApplicationDialogOpen] = useState(false);
   
-  // Mock authentication state - in real app this would come from auth context
-  const [isLoggedIn] = useState(false);
-  const [userRole] = useState<'student' | 'admin' | null>(null);
+  // Simulate authentication state - check localStorage for login status
+  const [isLoggedIn] = useState(() => {
+    // In a real app, this would check actual auth state
+    // For demo, we'll check if user came from login page
+    return localStorage.getItem('userLoggedIn') === 'true';
+  });
+  const [userRole] = useState<'student' | 'admin' | null>(() => {
+    if (!isLoggedIn) return null;
+    return localStorage.getItem('userRole') as 'student' | 'admin' || 'student';
+  });
   
   // Filter jobs based on search term and job type
   const filteredJobs = jobListings.filter(job => {
@@ -140,15 +146,8 @@ const Jobs = () => {
   };
 
   const viewJobDetails = (jobId: number) => {
-    if (!isLoggedIn) {
-      toast({
-        title: "Login Required",
-        description: "Please login as a student to view job details.",
-        variant: "destructive"
-      });
-      return;
-    }
-    // Navigate to job details
+    // Job details are now public, no login required
+    console.log(`Viewing details for job ${jobId}`);
   };
 
   const handleApplicationSubmitted = (jobId: number) => {
@@ -230,7 +229,7 @@ const Jobs = () => {
                       <span className="bg-unisphere-lightBlue/20 text-unisphere-darkBlue px-3 py-1 rounded-full text-sm font-medium">
                         {job.type}
                       </span>
-                      {applicationStatuses[job.id as keyof typeof applicationStatuses] && (
+                      {isLoggedIn && userRole === 'student' && applicationStatuses[job.id as keyof typeof applicationStatuses] && (
                         <Badge className={
                           applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" ? "bg-green-100 text-green-800" :
                           applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review" ? "bg-yellow-100 text-yellow-800" :
@@ -254,12 +253,7 @@ const Jobs = () => {
                     <span>{job.location}</span>
                   </div>
                   <p className="text-gray-700">
-                    {isLoggedIn && userRole === 'student' ? job.description : 
-                     <span className="flex items-center text-gray-500">
-                       <Lock className="h-4 w-4 mr-2" />
-                       Login as a student to view job details
-                     </span>
-                    }
+                    {job.description}
                   </p>
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row justify-between border-t pt-4">
@@ -273,15 +267,15 @@ const Jobs = () => {
                       className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10"
                       onClick={() => viewJobDetails(job.id)}
                     >
-                      {isLoggedIn && userRole === 'student' ? 'View Details' : 'Login to View'}
+                      View Details
                     </Button>
                     <Button 
                       className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white"
                       onClick={() => applyForJob(job)}
-                      disabled={!isLoggedIn || (applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review")}
+                      disabled={isLoggedIn && userRole === 'student' && (applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review")}
                     >
                       {!isLoggedIn ? "Login to Apply" : 
-                       (applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review") ? "Applied" : "Apply Now"}
+                       (isLoggedIn && userRole === 'student' && (applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review")) ? "Applied" : "Apply Now"}
                     </Button>
                   </div>
                 </CardFooter>

@@ -31,7 +31,10 @@ const Login = () => {
     
     // Simulate API call
     setTimeout(() => {
-      // Just for demo, in real app would check credentials
+      // Set login state in localStorage
+      localStorage.setItem('userLoggedIn', 'true');
+      localStorage.setItem('userRole', 'student');
+      
       toast({
         title: "Login successful!",
         description: "Redirecting to dashboard...",

@@ -32,7 +32,10 @@ const AdminLogin = () => {
     
     // Simulate API call
     setTimeout(() => {
-      // Just for demo, in real app would check admin credentials
+      // Set admin login state in localStorage
+      localStorage.setItem('userLoggedIn', 'true');
+      localStorage.setItem('userRole', 'admin');
+      
       toast({
         title: "Admin login successful!",
         description: "Redirecting to admin dashboard...",

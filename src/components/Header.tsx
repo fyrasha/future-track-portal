@@ -1,30 +1,34 @@
 
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut, User } from 'lucide-react';
-import { useIsMobile } from "@/hooks/use-mobile";
-import Chatbot from './Chatbot';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { User, LogOut, Settings, LayoutDashboard, Calendar, Briefcase, FileText, Users, BarChart3, CalendarDays } from 'lucide-react';
 
 const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const isMobile = useIsMobile();
+  const [userName, setUserName] = useState<string>('');
   const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = () => {
       const loggedIn = localStorage.getItem('userLoggedIn') === 'true';
       const role = localStorage.getItem('userRole');
+      const name = localStorage.getItem('userName') || '';
       setIsLoggedIn(loggedIn);
       setUserRole(role);
+      setUserName(name);
     };
 
-    // Check auth on mount
     checkAuth();
-
-    // Listen for storage changes (when user logs in/out in another tab)
     window.addEventListener('storage', checkAuth);
 
     return () => {
@@ -32,184 +36,185 @@ const Header = () => {
     };
   }, []);
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('userLoggedIn');
     localStorage.removeItem('userRole');
+    localStorage.removeItem('userName');
     setIsLoggedIn(false);
     setUserRole(null);
+    setUserName('');
     navigate('/');
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
-    <header className="w-full bg-white shadow-sm">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center">
-          <img src="/lovable-uploads/fdfe74bd-5402-4868-80e2-8f40c49af094.png" alt="UniSphere Logo" className="h-10" />
-          <span className="text-unisphere-darkBlue font-bold text-xl ml-2">UniSphere</span>
+    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        <Link to="/" className="flex items-center space-x-2">
+          <div className="h-8 w-8 rounded-full bg-gradient-to-r from-unisphere-blue to-unisphere-darkBlue"></div>
+          <span className="text-xl font-bold text-unisphere-darkBlue">UniSphere</span>
         </Link>
 
-        {isMobile ? (
-          <>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleMenu}
-              aria-label="Toggle menu"
-            >
-              {isMenuOpen ? <X /> : <Menu />}
-            </Button>
-
-            {isMenuOpen && (
-              <div className="absolute top-16 left-0 right-0 bg-white shadow-md z-50 animate-fade-in">
-                <nav className="flex flex-col py-4">
-                  <Link to="/" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
-                    Home
+        <nav className="hidden md:flex items-center space-x-6">
+          {isLoggedIn ? (
+            <>
+              {userRole === 'student' && (
+                <>
+                  <Link to="/dashboard" className="text-gray-600 hover:text-unisphere-blue transition-colors">
+                    Dashboard
                   </Link>
-                  <Link to="/jobs" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
+                  <Link to="/jobs" className="text-gray-600 hover:text-unisphere-blue transition-colors">
                     Jobs
                   </Link>
-                  <Link to="/resume" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
-                    Resume Builder
-                  </Link>
-                  <Link to="/calendar" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
+                  <Link to="/calendar" className="text-gray-600 hover:text-unisphere-blue transition-colors">
                     Calendar
                   </Link>
-                  {isLoggedIn && userRole === 'student' && (
-                    <>
-                      <Link to="/applications" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
-                        Applications
-                      </Link>
-                      <Link to="/recommendations" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
-                        Recommendations
-                      </Link>
-                      <Link to="/profile" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
-                        Profile
-                      </Link>
-                    </>
-                  )}
-                  {isLoggedIn && userRole === 'admin' && (
-                    <>
-                      <Link to="/admin/dashboard" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
-                        Admin Dashboard
-                      </Link>
-                      <Link to="/admin/analytics" className="px-4 py-3 text-unisphere-darkBlue hover:bg-gray-100">
-                        Analytics
-                      </Link>
-                    </>
-                  )}
-                  <div className="border-t border-gray-200 mt-2 pt-2">
-                    {isLoggedIn ? (
-                      <div className="px-4 py-3">
-                        <div className="flex items-center text-unisphere-darkBlue mb-2">
-                          <User className="h-4 w-4 mr-2" />
-                          <span className="capitalize">{userRole}</span>
-                        </div>
-                        <Button
-                          onClick={handleLogout}
-                          variant="outline"
-                          className="w-full border-red-300 text-red-600 hover:bg-red-50"
-                        >
-                          <LogOut className="mr-2 h-4 w-4" />
-                          Logout
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <Link to="/login" className="px-4 py-3 text-unisphere-blue hover:bg-gray-100 block">
-                          Login
-                        </Link>
-                        <Link to="/signup" className="px-4 py-3 text-unisphere-blue hover:bg-gray-100 block">
-                          Sign Up
-                        </Link>
-                      </>
-                    )}
-                  </div>
-                </nav>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="flex items-center space-x-8">
-            <nav className="flex space-x-6">
-              <Link to="/" className="text-unisphere-darkBlue hover:text-unisphere-blue transition-colors">
-                Home
-              </Link>
-              <Link to="/jobs" className="text-unisphere-darkBlue hover:text-unisphere-blue transition-colors">
-                Jobs
-              </Link>
-              <Link to="/resume" className="text-unisphere-darkBlue hover:text-unisphere-blue transition-colors">
-                Resume Builder
-              </Link>
-              <Link to="/calendar" className="text-unisphere-darkBlue hover:text-unisphere-blue transition-colors">
-                Calendar
-              </Link>
-              {isLoggedIn && userRole === 'student' && (
-                <>
-                  <Link to="/applications" className="text-unisphere-darkBlue hover:text-unisphere-blue transition-colors">
-                    Applications
-                  </Link>
-                  <Link to="/recommendations" className="text-unisphere-darkBlue hover:text-unisphere-blue transition-colors">
-                    Recommendations
+                  <Link to="/resume" className="text-gray-600 hover:text-unisphere-blue transition-colors">
+                    Resume
                   </Link>
                 </>
               )}
-              {isLoggedIn && userRole === 'admin' && (
+              {userRole === 'admin' && (
                 <>
-                  <Link to="/admin/dashboard" className="text-unisphere-darkBlue hover:text-unisphere-blue transition-colors">
-                    Admin Dashboard
+                  <Link to="/admin/dashboard" className="text-gray-600 hover:text-unisphere-blue transition-colors">
+                    Dashboard
                   </Link>
-                  <Link to="/admin/analytics" className="text-unisphere-darkBlue hover:text-unisphere-blue transition-colors">
+                  <Link to="/admin/analytics" className="text-gray-600 hover:text-unisphere-blue transition-colors">
                     Analytics
                   </Link>
+                  <Link to="/admin/events" className="text-gray-600 hover:text-unisphere-blue transition-colors">
+                    Events
+                  </Link>
                 </>
               )}
-            </nav>
-            <div className="flex items-center space-x-4">
-              {isLoggedIn ? (
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center text-unisphere-darkBlue">
-                    <User className="h-4 w-4 mr-1" />
-                    <span className="capitalize text-sm">{userRole}</span>
+            </>
+          ) : (
+            <>
+              <Link to="/jobs" className="text-gray-600 hover:text-unisphere-blue transition-colors">
+                Jobs
+              </Link>
+              <Link to="/calendar" className="text-gray-600 hover:text-unisphere-blue transition-colors">
+                Events
+              </Link>
+            </>
+          )}
+        </nav>
+
+        <div className="flex items-center space-x-4">
+          {isLoggedIn ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="" alt={userName} />
+                    <AvatarFallback className="bg-unisphere-blue text-white text-sm">
+                      {getInitials(userName)}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-medium">{userName}</p>
+                    <p className="w-[200px] truncate text-sm text-muted-foreground capitalize">
+                      {userRole}
+                    </p>
                   </div>
-                  {userRole === 'student' && (
-                    <Link to="/profile">
-                      <Button variant="outline" className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10">
-                        Profile
-                      </Button>
-                    </Link>
-                  )}
-                  <Button
-                    onClick={handleLogout}
-                    variant="outline"
-                    className="border-red-300 text-red-600 hover:bg-red-50"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </Button>
                 </div>
-              ) : (
-                <>
-                  <Link to="/login">
-                    <Button variant="outline" className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10">
-                      Login
-                    </Button>
+                <DropdownMenuSeparator />
+                
+                {userRole === 'student' && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to="/dashboard" className="cursor-pointer">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/jobs" className="cursor-pointer">
+                        <Briefcase className="mr-2 h-4 w-4" />
+                        Jobs
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/applications" className="cursor-pointer">
+                        <FileText className="mr-2 h-4 w-4" />
+                        Applications
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/calendar" className="cursor-pointer">
+                        <Calendar className="mr-2 h-4 w-4" />
+                        Calendar
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/recommendations" className="cursor-pointer">
+                        <Users className="mr-2 h-4 w-4" />
+                        Recommendations
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                {userRole === 'admin' && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin/dashboard" className="cursor-pointer">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin/analytics" className="cursor-pointer">
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        Analytics
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin/events" className="cursor-pointer">
+                        <CalendarDays className="mr-2 h-4 w-4" />
+                        Event Management
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
                   </Link>
-                  <Link to="/signup">
-                    <Button className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white">
-                      Sign Up
-                    </Button>
-                  </Link>
-                </>
-              )}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <Button variant="ghost" asChild>
+                <Link to="/login">Login</Link>
+              </Button>
+              <Button asChild>
+                <Link to="/signup">Sign Up</Link>
+              </Button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-      <Chatbot />
     </header>
   );
 };

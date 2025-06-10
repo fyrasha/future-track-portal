@@ -27,7 +27,8 @@ import {
   Edit, 
   Trash2,
   CheckCircle,
-  XCircle
+  XCircle,
+  Calendar
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -41,9 +42,9 @@ const analyticsData = {
 };
 
 const inactiveStudents = [
-  { id: 1, name: "Ahmad Rahman", email: "ahmad@student.edu", lastActive: "2025-04-15", status: "Inactive" },
-  { id: 2, name: "Siti Nurhaliza", email: "siti@student.edu", lastActive: "2025-04-10", status: "Inactive" },
-  { id: 3, name: "Raj Kumar", email: "raj@student.edu", lastActive: "2025-04-08", status: "Inactive" }
+  { id: 1, name: "Ahmad Rahman", email: "ahmad@student.edu", lastActivity: "Career Fair 2024", lastActivityDate: "2024-11-15", status: "Inactive" },
+  { id: 2, name: "Siti Nurhaliza", email: "siti@student.edu", lastActivity: "Resume Workshop", lastActivityDate: "2024-10-20", status: "Inactive" },
+  { id: 3, name: "Raj Kumar", email: "raj@student.edu", lastActivity: "Tech Symposium", lastActivityDate: "2024-09-25", status: "Inactive" }
 ];
 
 const topCompanies = [
@@ -74,11 +75,12 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="analytics" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="jobs">Job Management</TabsTrigger>
             <TabsTrigger value="employers">Employer Review</TabsTrigger>
             <TabsTrigger value="students">Student Management</TabsTrigger>
+            <TabsTrigger value="events">Event Management</TabsTrigger>
           </TabsList>
 
           <TabsContent value="analytics" className="space-y-6">
@@ -175,14 +177,15 @@ const AdminDashboard = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Recently Inactive Students</CardTitle>
+                  <CardTitle>Students with Low Activity</CardTitle>
+                  <CardDescription>Students who haven't participated in recent activities</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Student</TableHead>
-                        <TableHead>Last Active</TableHead>
+                        <TableHead>Last Activity</TableHead>
                         <TableHead>Action</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -195,7 +198,12 @@ const AdminDashboard = () => {
                               <div className="text-sm text-gray-500">{student.email}</div>
                             </div>
                           </TableCell>
-                          <TableCell>{new Date(student.lastActive).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{student.lastActivity}</div>
+                              <div className="text-sm text-gray-500">{new Date(student.lastActivityDate).toLocaleDateString()}</div>
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <Button variant="outline" size="sm">
                               Contact

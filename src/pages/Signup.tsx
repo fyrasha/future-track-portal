@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import MainLayout from "@/components/MainLayout";
@@ -16,6 +17,7 @@ const Signup = () => {
     email: "",
     password: "",
     confirmPassword: "",
+    currentStudyYear: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -24,6 +26,13 @@ const Signup = () => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  const handleStudyYearChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      currentStudyYear: value,
     }));
   };
 
@@ -46,6 +55,16 @@ const Signup = () => {
       toast({
         title: "Password too short",
         description: "Password must be at least 8 characters long.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.currentStudyYear) {
+      toast({
+        title: "Study year required",
+        description: "Please select your current study year.",
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -112,6 +131,20 @@ const Signup = () => {
                     value={formData.email}
                     onChange={handleChange}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="currentStudyYear">Current Study Year</Label>
+                  <Select onValueChange={handleStudyYearChange} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your current study year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="first">First Year</SelectItem>
+                      <SelectItem value="second">Second Year</SelectItem>
+                      <SelectItem value="third">Third Year</SelectItem>
+                      <SelectItem value="final">Final Year</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>

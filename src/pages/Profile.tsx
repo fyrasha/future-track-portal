@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User, Mail, Phone, MapPin, GraduationCap, Briefcase, Edit, Save, Eye, EyeOff } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +27,7 @@ const Profile = () => {
     university: "University of Malaya",
     degree: "Bachelor of Computer Science",
     year: "Final Year",
+    currentStudyYear: "final",
     gpa: "3.85",
     skills: "JavaScript, React, Python, Node.js, SQL",
     bio: "Passionate computer science student with experience in web development and data analysis."
@@ -88,6 +90,10 @@ const Profile = () => {
       title: "Password Changed",
       description: "Your password has been successfully changed.",
     });
+  };
+
+  const handleStudyYearChange = (value: string) => {
+    setProfileData({...profileData, currentStudyYear: value});
   };
 
   if (!isLoggedIn || userRole !== 'student') {
@@ -218,13 +224,22 @@ const Profile = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="year">Academic Year</Label>
-                    <Input
-                      id="year"
-                      value={profileData.year}
-                      onChange={(e) => setProfileData({...profileData, year: e.target.value})}
+                    <Label htmlFor="currentStudyYear">Current Study Year</Label>
+                    <Select 
+                      value={profileData.currentStudyYear} 
+                      onValueChange={handleStudyYearChange}
                       disabled={!isEditing}
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select study year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="first">First Year</SelectItem>
+                        <SelectItem value="second">Second Year</SelectItem>
+                        <SelectItem value="third">Third Year</SelectItem>
+                        <SelectItem value="final">Final Year</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">

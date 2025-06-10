@@ -18,6 +18,8 @@ import Recommendations from "./pages/Recommendations";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import Profile from "./pages/Profile";
+import StudentDashboard from "./pages/StudentDashboard";
+import EventManagement from "./pages/EventManagement";
 import CompanyDetails from "./pages/CompanyDetails";
 import NotFound from "./pages/NotFound";
 
@@ -38,6 +40,7 @@ const App = () => (
             <Route path="/admin" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/analytics" element={<AdminAnalytics />} />
+            <Route path="/admin/events" element={<EventManagement />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/jobs/:id" element={<Jobs />} />
             <Route path="/company/:id" element={<CompanyDetails />} />
@@ -47,6 +50,7 @@ const App = () => (
             <Route path="/applications" element={<Applications />} />
             <Route path="/recommendations" element={<Recommendations />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/dashboard" element={<StudentDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

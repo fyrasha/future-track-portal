@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import MainLayout from "@/components/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Calendar, Clock, MapPin, Users, Plus, Edit, Trash2, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock event data
+// Enhanced mock event data with more examples
 const mockEvents = [
   {
     id: 1,
@@ -24,7 +23,7 @@ const mockEvents = [
     location: "Main Hall",
     status: "upcoming",
     participants: 234,
-    description: "Annual career fair with 50+ companies"
+    description: "Annual career fair with 50+ companies including tech giants, startups, and local businesses"
   },
   {
     id: 2,
@@ -35,7 +34,7 @@ const mockEvents = [
     location: "Computer Lab 1",
     status: "ongoing",
     participants: 45,
-    description: "Learn about the latest technologies in software development"
+    description: "Learn about the latest technologies in software development, AI, and machine learning"
   },
   {
     id: 3,
@@ -46,7 +45,7 @@ const mockEvents = [
     location: "Conference Room A",
     status: "completed",
     participants: 89,
-    description: "Connect with successful alumni from various industries"
+    description: "Connect with successful alumni from various industries and build professional relationships"
   },
   {
     id: 4,
@@ -57,7 +56,73 @@ const mockEvents = [
     location: "Lecture Hall 2",
     status: "upcoming",
     participants: 67,
-    description: "Professional resume writing tips and strategies"
+    description: "Professional resume writing tips and strategies for landing your dream job"
+  },
+  {
+    id: 5,
+    name: "Coding Bootcamp",
+    type: "workshop",
+    date: "2025-03-25",
+    time: "09:00",
+    location: "Computer Lab 2",
+    status: "upcoming",
+    participants: 32,
+    description: "Intensive 3-day coding workshop covering modern web development frameworks"
+  },
+  {
+    id: 6,
+    name: "Industry Visit - Microsoft Malaysia",
+    type: "visit",
+    date: "2025-04-08",
+    time: "13:00",
+    location: "Microsoft Office, KL",
+    status: "upcoming",
+    participants: 25,
+    description: "Exclusive visit to Microsoft Malaysia headquarters with office tour and tech talks"
+  },
+  {
+    id: 7,
+    name: "Entrepreneurship Summit",
+    type: "seminar",
+    date: "2025-03-15",
+    time: "08:30",
+    location: "Auditorium",
+    status: "ongoing",
+    participants: 156,
+    description: "Learn from successful entrepreneurs and startup founders about building businesses"
+  },
+  {
+    id: 8,
+    name: "Mock Interview Session",
+    type: "interview",
+    date: "2025-02-20",
+    time: "14:30",
+    location: "Meeting Room B",
+    status: "completed",
+    participants: 78,
+    description: "Practice interviews with industry professionals and receive valuable feedback"
+  },
+  {
+    id: 9,
+    name: "Data Science Workshop",
+    type: "workshop",
+    date: "2025-05-12",
+    time: "10:00",
+    location: "Lab 3",
+    status: "upcoming",
+    participants: 42,
+    description: "Hands-on workshop on data analysis, visualization, and machine learning basics"
+  },
+  {
+    id: 10,
+    name: "Graduate School Information Session",
+    type: "orientation",
+    date: "2025-03-30",
+    time: "15:00",
+    location: "Lecture Hall 1",
+    status: "upcoming",
+    participants: 95,
+    description: "Information about postgraduate programs, scholarships, and application processes"
   }
 ];
 
@@ -94,6 +159,9 @@ const EventManagement = () => {
       case 'workshop': return <Calendar className="h-4 w-4" />;
       case 'networking': return <Users className="h-4 w-4" />;
       case 'seminar': return <Clock className="h-4 w-4" />;
+      case 'visit': return <MapPin className="h-4 w-4" />;
+      case 'interview': return <Clock className="h-4 w-4" />;
+      case 'orientation': return <Calendar className="h-4 w-4" />;
       default: return <Calendar className="h-4 w-4" />;
     }
   };
@@ -260,6 +328,8 @@ const EventManagement = () => {
                             <SelectItem value="seminar">Seminar</SelectItem>
                             <SelectItem value="orientation">Orientation</SelectItem>
                             <SelectItem value="academic">Academic</SelectItem>
+                            <SelectItem value="visit">Industry Visit</SelectItem>
+                            <SelectItem value="interview">Interview</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

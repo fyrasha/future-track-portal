@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings, LayoutDashboard, Calendar, Briefcase, FileText, Users, BarChart3, CalendarDays } from 'lucide-react';
+import { User, LogOut, Settings, LayoutDashboard, Calendar, Briefcase, FileText, Users, BarChart3, CalendarDays, EllipsisVertical } from 'lucide-react';
 
 const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -46,21 +45,12 @@ const Header = () => {
     navigate('/');
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded-full bg-gradient-to-r from-unisphere-blue to-unisphere-darkBlue"></div>
-          <span className="text-xl font-bold text-unisphere-darkBlue">UniSphere</span>
+          <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-700"></div>
+          <span className="text-xl font-bold text-blue-700">UniSphere</span>
         </Link>
 
         <nav className="hidden md:flex items-center space-x-6">
@@ -68,29 +58,29 @@ const Header = () => {
             <>
               {userRole === 'student' && (
                 <>
-                  <Link to="/dashboard" className="text-gray-600 hover:text-unisphere-blue transition-colors">
+                  <Link to="/dashboard" className="text-gray-600 hover:text-blue-500 transition-colors">
                     Dashboard
                   </Link>
-                  <Link to="/jobs" className="text-gray-600 hover:text-unisphere-blue transition-colors">
+                  <Link to="/jobs" className="text-gray-600 hover:text-blue-500 transition-colors">
                     Jobs
                   </Link>
-                  <Link to="/calendar" className="text-gray-600 hover:text-unisphere-blue transition-colors">
+                  <Link to="/calendar" className="text-gray-600 hover:text-blue-500 transition-colors">
                     Calendar
                   </Link>
-                  <Link to="/resume" className="text-gray-600 hover:text-unisphere-blue transition-colors">
+                  <Link to="/resume" className="text-gray-600 hover:text-blue-500 transition-colors">
                     Resume
                   </Link>
                 </>
               )}
               {userRole === 'admin' && (
                 <>
-                  <Link to="/admin/dashboard" className="text-gray-600 hover:text-unisphere-blue transition-colors">
+                  <Link to="/admin/dashboard" className="text-gray-600 hover:text-blue-500 transition-colors">
                     Dashboard
                   </Link>
-                  <Link to="/admin/analytics" className="text-gray-600 hover:text-unisphere-blue transition-colors">
+                  <Link to="/admin/analytics" className="text-gray-600 hover:text-blue-500 transition-colors">
                     Analytics
                   </Link>
-                  <Link to="/admin/events" className="text-gray-600 hover:text-unisphere-blue transition-colors">
+                  <Link to="/admin/events" className="text-gray-600 hover:text-blue-500 transition-colors">
                     Events
                   </Link>
                 </>
@@ -98,10 +88,10 @@ const Header = () => {
             </>
           ) : (
             <>
-              <Link to="/jobs" className="text-gray-600 hover:text-unisphere-blue transition-colors">
+              <Link to="/jobs" className="text-gray-600 hover:text-blue-500 transition-colors">
                 Jobs
               </Link>
-              <Link to="/calendar" className="text-gray-600 hover:text-unisphere-blue transition-colors">
+              <Link to="/calendar" className="text-gray-600 hover:text-blue-500 transition-colors">
                 Events
               </Link>
             </>
@@ -113,12 +103,7 @@ const Header = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="" alt={userName} />
-                    <AvatarFallback className="bg-unisphere-blue text-white text-sm">
-                      {getInitials(userName)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <EllipsisVertical className="h-5 w-5 text-blue-500" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>

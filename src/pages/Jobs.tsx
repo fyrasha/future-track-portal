@@ -166,13 +166,13 @@ const Jobs = () => {
           <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-4 md:mb-0">Job Listings</h1>
           <div className="flex gap-3">
             <Link to="/applications">
-              <Button className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white">
+              <Button className="bg-blue-500 hover:bg-blue-600 text-white">
                 <Briefcase className="mr-2 h-4 w-4" />
                 My Applications
               </Button>
             </Link>
             <Link to="/recommendations">
-              <Button className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white">
+              <Button className="bg-blue-500 hover:bg-blue-600 text-white">
                 <Star className="mr-2 h-4 w-4" />
                 Career Recommendations
               </Button>
@@ -271,13 +271,13 @@ const Jobs = () => {
                   <div className="flex gap-2">
                     <Button 
                       variant="outline" 
-                      className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10"
+                      className="border-blue-500 text-blue-500 hover:bg-blue-50"
                       onClick={() => viewJobDetails(job.id)}
                     >
                       View Details
                     </Button>
                     <Button 
-                      className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white"
+                      className="bg-blue-500 hover:bg-blue-600 text-white"
                       onClick={() => applyForJob(job)}
                       disabled={isLoggedIn && userRole === 'student' && (applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review")}
                     >

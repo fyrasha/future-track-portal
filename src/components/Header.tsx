@@ -64,6 +64,9 @@ const Header = () => {
                   <Link to="/jobs" className="text-gray-200 hover:text-white transition-colors">
                     Jobs
                   </Link>
+                  <Link to="/events" className="text-gray-200 hover:text-white transition-colors">
+                    Events
+                  </Link>
                   <Link to="/calendar" className="text-gray-200 hover:text-white transition-colors">
                     Calendar
                   </Link>
@@ -91,7 +94,7 @@ const Header = () => {
               <Link to="/jobs" className="text-gray-200 hover:text-white transition-colors">
                 Jobs
               </Link>
-              <Link to="/calendar" className="text-gray-200 hover:text-white transition-colors">
+              <Link to="/events" className="text-gray-200 hover:text-white transition-colors">
                 Events
               </Link>
             </>

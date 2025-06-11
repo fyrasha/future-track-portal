@@ -12,6 +12,7 @@ import AdminLogin from "./pages/AdminLogin";
 import Jobs from "./pages/Jobs";
 import Resume from "./pages/Resume";
 import Calendar from "./pages/Calendar";
+import Events from "./pages/Events";
 import AIResumeScreen from "./pages/AIResumeScreen";
 import Applications from "./pages/Applications";
 import Recommendations from "./pages/Recommendations";
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/company/:id" element={<CompanyDetails />} />
             <Route path="/resume" element={<Resume />} />
             <Route path="/calendar" element={<Calendar />} />
+            <Route path="/events" element={<Events />} />
             <Route path="/ai-resume-screen" element={<AIResumeScreen />} />
             <Route path="/applications" element={<Applications />} />
             <Route path="/recommendations" element={<Recommendations />} />

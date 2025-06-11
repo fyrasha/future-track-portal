@@ -46,7 +46,7 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-blue-900 border-blue-800">
+    <header className="sticky top-0 z-50 w-full border-b bg-blue-950 border-blue-900">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center space-x-2">
           <img src="/lovable-uploads/c1fefc4a-0150-49c5-b734-f2588b1e8d79.png" alt="UniSphere Logo" className="h-10 w-10" />

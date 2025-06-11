@@ -46,11 +46,11 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-blue-900 border-blue-800">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center space-x-2">
           <img src="/lovable-uploads/c1fefc4a-0150-49c5-b734-f2588b1e8d79.png" alt="UniSphere Logo" className="h-10 w-10" />
-          <span className="text-xl font-bold text-blue-800">UniSphere</span>
+          <span className="text-xl font-bold text-white">UniSphere</span>
         </Link>
 
         <nav className="hidden md:flex items-center space-x-6">
@@ -58,29 +58,29 @@ const Header = () => {
             <>
               {userRole === 'student' && (
                 <>
-                  <Link to="/dashboard" className="text-gray-600 hover:text-blue-700 transition-colors">
+                  <Link to="/dashboard" className="text-gray-200 hover:text-white transition-colors">
                     Dashboard
                   </Link>
-                  <Link to="/jobs" className="text-gray-600 hover:text-blue-700 transition-colors">
+                  <Link to="/jobs" className="text-gray-200 hover:text-white transition-colors">
                     Jobs
                   </Link>
-                  <Link to="/calendar" className="text-gray-600 hover:text-blue-700 transition-colors">
+                  <Link to="/calendar" className="text-gray-200 hover:text-white transition-colors">
                     Calendar
                   </Link>
-                  <Link to="/resume" className="text-gray-600 hover:text-blue-700 transition-colors">
+                  <Link to="/resume" className="text-gray-200 hover:text-white transition-colors">
                     Resume
                   </Link>
                 </>
               )}
               {userRole === 'admin' && (
                 <>
-                  <Link to="/admin/dashboard" className="text-gray-600 hover:text-blue-700 transition-colors">
+                  <Link to="/admin/dashboard" className="text-gray-200 hover:text-white transition-colors">
                     Dashboard
                   </Link>
-                  <Link to="/admin/analytics" className="text-gray-600 hover:text-blue-700 transition-colors">
+                  <Link to="/admin/analytics" className="text-gray-200 hover:text-white transition-colors">
                     Analytics
                   </Link>
-                  <Link to="/admin/events" className="text-gray-600 hover:text-blue-700 transition-colors">
+                  <Link to="/admin/events" className="text-gray-200 hover:text-white transition-colors">
                     Events
                   </Link>
                 </>
@@ -88,10 +88,10 @@ const Header = () => {
             </>
           ) : (
             <>
-              <Link to="/jobs" className="text-gray-600 hover:text-blue-700 transition-colors">
+              <Link to="/jobs" className="text-gray-200 hover:text-white transition-colors">
                 Jobs
               </Link>
-              <Link to="/calendar" className="text-gray-600 hover:text-blue-700 transition-colors">
+              <Link to="/calendar" className="text-gray-200 hover:text-white transition-colors">
                 Events
               </Link>
             </>
@@ -102,8 +102,8 @@ const Header = () => {
           {isLoggedIn ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <EllipsisVertical className="h-5 w-5 text-blue-700" />
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-blue-800">
+                  <EllipsisVertical className="h-5 w-5 text-white" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -190,10 +190,10 @@ const Header = () => {
             </DropdownMenu>
           ) : (
             <div className="flex items-center space-x-2">
-              <Button variant="ghost" asChild>
+              <Button variant="ghost" className="text-white hover:bg-blue-800 hover:text-white" asChild>
                 <Link to="/login">Login</Link>
               </Button>
-              <Button asChild>
+              <Button className="bg-white text-blue-900 hover:bg-gray-100" asChild>
                 <Link to="/signup">Sign Up</Link>
               </Button>
             </div>

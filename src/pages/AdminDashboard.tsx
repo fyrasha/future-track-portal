@@ -28,6 +28,26 @@ import {
   Calendar
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from "@/components/ui/chart";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  ResponsiveContainer
+} from "recharts";
 
 // Mock data
 const analyticsData = {
@@ -36,6 +56,56 @@ const analyticsData = {
   inactiveStudents: 358,
   totalJobs: 45,
   totalCompanies: 23
+};
+
+const studentActivityData = [
+  { month: "Jan", active: 820, inactive: 430 },
+  { month: "Feb", active: 845, inactive: 405 },
+  { month: "Mar", active: 867, inactive: 383 },
+  { month: "Apr", active: 878, inactive: 372 },
+  { month: "May", active: 885, inactive: 365 },
+  { month: "Jun", active: 892, inactive: 358 }
+];
+
+const jobApplicationsData = [
+  { company: "TechCorp", applications: 145 },
+  { company: "Analytics Pro", applications: 89 },
+  { company: "Creative Solutions", applications: 67 },
+  { company: "Brand Masters", applications: 54 },
+  { company: "Global Finance", applications: 43 }
+];
+
+const studentStatusData = [
+  { name: "Active", value: 892, color: "#10b981" },
+  { name: "Inactive", value: 358, color: "#ef4444" }
+];
+
+const monthlyJobPostings = [
+  { month: "Jan", jobs: 35 },
+  { month: "Feb", jobs: 42 },
+  { month: "Mar", jobs: 38 },
+  { month: "Apr", jobs: 45 },
+  { month: "May", jobs: 41 },
+  { month: "Jun", jobs: 45 }
+];
+
+const chartConfig = {
+  active: {
+    label: "Active Students",
+    color: "#10b981",
+  },
+  inactive: {
+    label: "Inactive Students", 
+    color: "#ef4444",
+  },
+  applications: {
+    label: "Applications",
+    color: "#3b82f6",
+  },
+  jobs: {
+    label: "Job Postings",
+    color: "#8b5cf6",
+  }
 };
 
 const inactiveStudents = [
@@ -111,6 +181,57 @@ const AdminDashboard = () => {
               </Card>
             </div>
 
+            {/* Student Activity Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Student Activity Trend</CardTitle>
+                  <CardDescription>Monthly active vs inactive students</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer config={chartConfig} className="h-[300px]">
+                    <BarChart data={studentActivityData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <ChartLegend content={<ChartLegendContent />} />
+                      <Bar dataKey="active" fill="var(--color-active)" />
+                      <Bar dataKey="inactive" fill="var(--color-inactive)" />
+                    </BarChart>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Student Status Distribution</CardTitle>
+                  <CardDescription>Current active vs inactive breakdown</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer config={chartConfig} className="h-[300px]">
+                    <PieChart>
+                      <Pie
+                        data={studentStatusData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {studentStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <ChartLegend content={<ChartLegendContent />} />
+                    </PieChart>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Inactive Students Details */}
             <Card>
               <CardHeader>
@@ -178,6 +299,51 @@ const AdminDashboard = () => {
                     <Building className="h-4 w-4 text-unisphere-blue" />
                     <div className="text-2xl font-bold">{analyticsData.totalCompanies}</div>
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Jobs & Companies Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Job Applications by Company</CardTitle>
+                  <CardDescription>Top companies by application volume</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer config={chartConfig} className="h-[300px]">
+                    <BarChart data={jobApplicationsData} layout="horizontal">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis dataKey="company" type="category" width={80} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="applications" fill="var(--color-applications)" />
+                    </BarChart>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Monthly Job Postings</CardTitle>
+                  <CardDescription>Job posting trends over time</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer config={chartConfig} className="h-[300px]">
+                    <LineChart data={monthlyJobPostings}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Line 
+                        type="monotone" 
+                        dataKey="jobs" 
+                        stroke="var(--color-jobs)" 
+                        strokeWidth={3}
+                        dot={{ fill: "var(--color-jobs)", strokeWidth: 2, r: 4 }}
+                      />
+                    </LineChart>
+                  </ChartContainer>
                 </CardContent>
               </Card>
             </div>

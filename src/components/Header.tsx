@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings, LayoutDashboard, Calendar, Briefcase, FileText, Users, BarChart3, CalendarDays, EllipsisVertical } from 'lucide-react';
+import { User, LogOut, Settings, LayoutDashboard, Calendar, Briefcase, FileText, Users, BarChart3, CalendarDays, EllipsisVertical, Building } from 'lucide-react';
 
 const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);

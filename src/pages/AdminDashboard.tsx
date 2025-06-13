@@ -122,7 +122,7 @@ const topCompanies = [
 
 const jobListings = [
   { id: 1, title: "Software Engineer Intern", company: "TechCorp Malaysia", status: "Active", applications: 23, postedDate: "2025-06-01" },
-  { id: 2, name: "Data Analyst", company: "Analytics Pro", status: "Active", applications: 18, postedDate: "2025-06-05" },
+  { id: 2, title: "Data Analyst", company: "Analytics Pro", status: "Active", applications: 18, postedDate: "2025-06-05" },
   { id: 3, title: "Marketing Assistant", company: "Brand Masters", status: "Pending", applications: 8, postedDate: "2025-06-10" }
 ];
 
@@ -190,15 +190,17 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <ChartContainer config={chartConfig} className="h-[300px]">
-                    <BarChart data={studentActivityData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <ChartLegend content={<ChartLegendContent />} />
-                      <Bar dataKey="active" fill="var(--color-active)" />
-                      <Bar dataKey="inactive" fill="var(--color-inactive)" />
-                    </BarChart>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={studentActivityData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <ChartLegend content={<ChartLegendContent />} />
+                        <Bar dataKey="active" fill="var(--color-active)" name="Active Students" />
+                        <Bar dataKey="inactive" fill="var(--color-inactive)" name="Inactive Students" />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </ChartContainer>
                 </CardContent>
               </Card>
@@ -210,23 +212,25 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <ChartContainer config={chartConfig} className="h-[300px]">
-                    <PieChart>
-                      <Pie
-                        data={studentStatusData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {studentStatusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <ChartLegend content={<ChartLegendContent />} />
-                    </PieChart>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={studentStatusData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          paddingAngle={5}
+                          dataKey="value"
+                          label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                        >
+                          {studentStatusData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </ChartContainer>
                 </CardContent>
               </Card>
@@ -312,13 +316,15 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <ChartContainer config={chartConfig} className="h-[300px]">
-                    <BarChart data={jobApplicationsData} layout="horizontal">
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis dataKey="company" type="category" width={80} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="applications" fill="var(--color-applications)" />
-                    </BarChart>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={jobApplicationsData} layout="horizontal">
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="company" type="category" width={120} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="applications" fill="var(--color-applications)" name="Applications" />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </ChartContainer>
                 </CardContent>
               </Card>
@@ -330,19 +336,22 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <ChartContainer config={chartConfig} className="h-[300px]">
-                    <LineChart data={monthlyJobPostings}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line 
-                        type="monotone" 
-                        dataKey="jobs" 
-                        stroke="var(--color-jobs)" 
-                        strokeWidth={3}
-                        dot={{ fill: "var(--color-jobs)", strokeWidth: 2, r: 4 }}
-                      />
-                    </LineChart>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={monthlyJobPostings}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Line 
+                          type="monotone" 
+                          dataKey="jobs" 
+                          stroke="var(--color-jobs)" 
+                          strokeWidth={3}
+                          dot={{ fill: "var(--color-jobs)", strokeWidth: 2, r: 6 }}
+                          name="Job Postings"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </ChartContainer>
                 </CardContent>
               </Card>

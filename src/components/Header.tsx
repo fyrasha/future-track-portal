@@ -80,8 +80,11 @@ const Header = () => {
                   <Link to="/admin/dashboard" className="text-gray-200 hover:text-white transition-colors">
                     Dashboard
                   </Link>
-                  <Link to="/admin/analytics" className="text-gray-200 hover:text-white transition-colors">
-                    Analytics
+                  <Link to="/admin/jobs" className="text-gray-200 hover:text-white transition-colors">
+                    Job Management
+                  </Link>
+                  <Link to="/admin/employers" className="text-gray-200 hover:text-white transition-colors">
+                    Employer Review
                   </Link>
                   <Link to="/admin/events" className="text-gray-200 hover:text-white transition-colors">
                     Events
@@ -164,9 +167,15 @@ const Header = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/admin/analytics" className="cursor-pointer">
-                        <BarChart3 className="mr-2 h-4 w-4" />
-                        Analytics
+                      <Link to="/admin/jobs" className="cursor-pointer">
+                        <Briefcase className="mr-2 h-4 w-4" />
+                        Job Management
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin/employers" className="cursor-pointer">
+                        <Building className="mr-2 h-4 w-4" />
+                        Employer Review
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>

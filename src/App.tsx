@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +22,8 @@ import StudentDashboard from "./pages/StudentDashboard";
 import EventManagement from "./pages/EventManagement";
 import CompanyDetails from "./pages/CompanyDetails";
 import NotFound from "./pages/NotFound";
+import AdminJobManagement from "./pages/AdminJobManagement";
+import AdminEmployerReview from "./pages/AdminEmployerReview";
 
 // Create a client outside of the component
 const queryClient = new QueryClient();
@@ -40,7 +41,8 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/admin" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/analytics" element={<AdminAnalytics />} />
+            <Route path="/admin/jobs" element={<AdminJobManagement />} />
+            <Route path="/admin/employers" element={<AdminEmployerReview />} />
             <Route path="/admin/events" element={<EventManagement />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/jobs/:id" element={<Jobs />} />

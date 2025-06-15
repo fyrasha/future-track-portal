@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -31,15 +30,16 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    console.log("Login attempt with:", formData.email);
+    console.log("Attempting to sign in with email:", formData.email);
     
     try {
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      console.log("Login successful for user:", userCredential.user.uid);
+      console.log("Firebase auth successful for user:", userCredential.user.uid);
       const user = userCredential.user;
 
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
+      console.log("Firestore user document exists:", userDoc.exists());
 
       let userRole = 'student';
       let userName = '';
@@ -48,6 +48,9 @@ const Login = () => {
         const userData = userDoc.data();
         userRole = userData.role || 'student';
         userName = userData.firstName || '';
+        console.log(`User role: ${userRole}, User name: ${userName}`);
+      } else {
+        console.log("No user document found in Firestore, defaulting to student role.");
       }
       
       localStorage.setItem('userLoggedIn', 'true');
@@ -61,18 +64,33 @@ const Login = () => {
         description: "Redirecting to your dashboard...",
       });
       
+      console.log("Navigating to /dashboard");
       navigate("/dashboard");
 
     } catch (error: any) {
-      console.error("Login error:", error);
-      let errorMessage = "Invalid email or password. Please try again.";
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        errorMessage = "Invalid email or password. Please try again.";
+      console.error("Login failed. Firebase error:", error);
+      
+      let errorMessage = "An unknown error occurred. Please try again.";
+      switch (error.code) {
+        case 'auth/invalid-email':
+          errorMessage = "The email address is not valid.";
+          break;
+        case 'auth/user-disabled':
+          errorMessage = "This user account has been disabled.";
+          break;
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+          errorMessage = "Invalid email or password. Please check your credentials and try again.";
+          break;
+        default:
+          errorMessage = "Login failed. Please try again later.";
       }
+
       toast({
         title: "Login Failed",
         description: errorMessage,
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);

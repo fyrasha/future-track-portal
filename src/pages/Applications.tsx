@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Table, 
@@ -26,8 +25,9 @@ import MainLayout from "@/components/MainLayout";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import ApplicationDetailsDialog from "../components/ApplicationDetailsDialog";
 
 interface Application {
   id: string;
@@ -36,11 +36,14 @@ interface Application {
   location?: string;
   appliedAt: Timestamp;
   status: string;
+  nextSteps?: string;
 }
 
 const Applications = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -62,9 +65,14 @@ const Applications = () => {
     queryKey: ['applications', userId],
     queryFn: async () => {
       if (!userId) return [];
-      const q = query(collection(db, "applications"), where("studentId", "==", userId), orderBy("appliedAt", "desc"));
+      // Query without ordering to avoid needing a composite index in Firestore.
+      // Sorting is done on the client-side after fetching.
+      const q = query(collection(db, "applications"), where("studentId", "==", userId));
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Application));
+      const appData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Application));
+      
+      // Sort applications by date, newest first.
+      return appData.sort((a, b) => b.appliedAt.toMillis() - a.appliedAt.toMillis());
     },
     enabled: !!userId,
   });
@@ -98,6 +106,11 @@ const Applications = () => {
       default:
         return <Badge>{status}</Badge>;
     }
+  };
+
+  const handleViewDetails = (application: Application) => {
+    setSelectedApplication(application);
+    setIsDialogOpen(true);
   };
 
   if (!isLoggedIn) {
@@ -198,9 +211,14 @@ const Applications = () => {
                     </TableCell>
                     <TableCell>{application.appliedAt.toDate().toLocaleDateString()}</TableCell>
                     <TableCell>{getStatusBadge(application.status)}</TableCell>
-                    <TableCell>{"—"}</TableCell>
+                    <TableCell>{application.nextSteps || "—"}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="outline" size="sm" className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10"
+                        onClick={() => handleViewDetails(application)}
+                      >
                         View Details
                       </Button>
                     </TableCell>
@@ -218,6 +236,11 @@ const Applications = () => {
           </Table>
         </div>
       </div>
+      <ApplicationDetailsDialog
+        application={selectedApplication}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+      />
     </MainLayout>
   );
 };

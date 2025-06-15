@@ -12,6 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { doc, runTransaction, increment, Timestamp } from 'firebase/firestore';
+import { useMutation } from '@tanstack/react-query';
 
 const Events = () => {
   const { toast } = useToast();
@@ -186,6 +188,7 @@ const Events = () => {
                 variant="default"
                 className="flex-1"
                 disabled={event.participants >= event.capacity}
+                onClick={() => handleRegister(event)}
               >
                 {event.participants >= event.capacity ? 'Full' : 'Register'}
               </Button>

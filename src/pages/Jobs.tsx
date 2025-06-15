@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -18,123 +17,62 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { 
   Briefcase, 
   MapPin, 
   Building, 
   Calendar, 
-  CheckCircle2, 
-  Clock, 
-  Star
+  Star,
+  CheckCircle2,
+  Clock
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
-} from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
 import JobApplicationDialog from "@/components/JobApplicationDialog";
-
-// Mock job data with Malaysia locations
-const jobListings = [
-  {
-    id: 1,
-    title: "Software Engineer Intern",
-    company: "TechCorp Malaysia",
-    companyId: "1",
-    location: "Kuala Lumpur, Malaysia",
-    type: "Internship",
-    postedDate: "2025-05-15",
-    deadline: "2025-06-30",
-    description: "Great opportunity for students to gain hands-on experience with modern web technologies and agile development practices."
-  },
-  {
-    id: 2,
-    title: "Data Analyst",
-    company: "Analytics Pro",
-    companyId: "2",
-    location: "Petaling Jaya, Malaysia",
-    type: "Full-time",
-    postedDate: "2025-05-10",
-    deadline: "2025-06-15",
-    description: "Join our data team to help transform complex data into actionable insights for business decisions."
-  },
-  {
-    id: 3,
-    title: "Marketing Assistant",
-    company: "Brand Masters",
-    location: "Penang, Malaysia",
-    type: "Part-time",
-    postedDate: "2025-05-17",
-    deadline: "2025-06-20",
-    description: "Support our marketing team in creating engaging content and managing social media campaigns."
-  },
-  {
-    id: 4,
-    title: "UX/UI Design Intern",
-    company: "Creative Solutions",
-    location: "Johor Bahru, Malaysia",
-    type: "Internship",
-    postedDate: "2025-05-12",
-    deadline: "2025-07-01",
-    description: "Help design intuitive and beautiful user interfaces for our web and mobile applications."
-  },
-  {
-    id: 5,
-    title: "Finance Analyst",
-    company: "Global Finance",
-    location: "Cyberjaya, Malaysia",
-    type: "Full-time",
-    postedDate: "2025-05-14",
-    deadline: "2025-06-25",
-    description: "Analyze financial data and prepare reports to support strategic business decisions."
-  }
-];
-
-// Application statuses for tracking
-const applicationStatuses = {
-  1: "Applied",
-  2: "Under Review",
-  3: "Not Started",
-  4: "Under Review",
-  5: "Interview Scheduled"
-};
+import { useQuery } from "@tanstack/react-query";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
+import { Job } from "@/types/job";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 const Jobs = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [jobType, setJobType] = useState("all");
   const { toast } = useToast();
-  const [selectedJob, setSelectedJob] = useState<typeof jobListings[0] | null>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [applicationDialogOpen, setApplicationDialogOpen] = useState(false);
   
-  // Simulate authentication state - check localStorage for login status
   const [isLoggedIn] = useState(() => {
-    // In a real app, this would check actual auth state
-    // For demo, we'll check if user came from login page
     return localStorage.getItem('userLoggedIn') === 'true';
   });
   const [userRole] = useState<'student' | 'admin' | null>(() => {
     if (!isLoggedIn) return null;
     return localStorage.getItem('userRole') as 'student' | 'admin' || 'student';
   });
+
+  const { data: jobListings, isLoading, error } = useQuery<Job[]>({
+    queryKey: ['jobs', 'active'],
+    queryFn: async () => {
+      const jobsCollection = collection(db, "jobs");
+      const q = query(jobsCollection, where("status", "==", "Active"), orderBy("postedDate", "desc"));
+      const jobSnapshot = await getDocs(q);
+      return jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
+    },
+  });
   
-  // Filter jobs based on search term and job type
-  const filteredJobs = jobListings.filter(job => {
-    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         job.location.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredJobs = jobListings?.filter(job => {
+    const matchesSearch = 
+      (job.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+      (job.company?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (job.location?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     
     const matchesType = jobType === "all" || job.type === jobType;
     
     return matchesSearch && matchesType;
-  });
+  }) ?? [];
 
-  const applyForJob = (job: typeof jobListings[0]) => {
+  const applyForJob = (job: Job) => {
     if (!isLoggedIn) {
       toast({
         title: "Login Required",
@@ -147,12 +85,7 @@ const Jobs = () => {
     setApplicationDialogOpen(true);
   };
 
-  const viewJobDetails = (jobId: number) => {
-    // Job details are now public, no login required
-    console.log(`Viewing details for job ${jobId}`);
-  };
-
-  const handleApplicationSubmitted = (jobId: number) => {
+  const handleApplicationSubmitted = (jobId: string) => {
     toast({
       title: "Application Submitted",
       description: "Your application has been successfully submitted.",
@@ -192,7 +125,6 @@ const Jobs = () => {
           <div className="col-span-1 md:col-span-2">
             <Input 
               placeholder="Search jobs, companies, or locations..." 
-              value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full"
             />
@@ -215,7 +147,21 @@ const Jobs = () => {
         
         {/* Job Listings */}
         <div className="space-y-6">
-          {filteredJobs.length > 0 ? (
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i}>
+                <CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader>
+                <CardContent><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6 mt-2" /></CardContent>
+                <CardFooter><Skeleton className="h-8 w-24" /></CardFooter>
+              </Card>
+            ))
+          ) : error ? (
+             <div className="text-center py-12 text-destructive">
+              <Briefcase className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-xl font-medium mb-1">Error loading jobs</h3>
+              <p className="text-gray-500">Could not fetch job listings. Please try again later.</p>
+            </div>
+          ) : filteredJobs.length > 0 ? (
             filteredJobs.map((job) => (
               <Card key={job.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
@@ -224,65 +170,42 @@ const Jobs = () => {
                       <CardTitle className="text-xl text-unisphere-darkBlue">{job.title}</CardTitle>
                       <CardDescription className="flex items-center mt-1">
                         <Building className="h-4 w-4 mr-1" />
-                        <Link 
-                          to={`/company/${job.companyId}`}
-                          className="text-unisphere-blue hover:underline"
-                        >
-                          {job.company}
-                        </Link>
+                        <span className="text-unisphere-blue">{job.company}</span>
                       </CardDescription>
                     </div>
-                    <div className="flex gap-2">
+                    {job.type && (
                       <span className="bg-unisphere-lightBlue/20 text-unisphere-darkBlue px-3 py-1 rounded-full text-sm font-medium">
                         {job.type}
                       </span>
-                      {isLoggedIn && userRole === 'student' && applicationStatuses[job.id as keyof typeof applicationStatuses] && (
-                        <Badge className={
-                          applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" ? "bg-green-100 text-green-800" :
-                          applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review" ? "bg-yellow-100 text-yellow-800" :
-                          applicationStatuses[job.id as keyof typeof applicationStatuses] === "Interview Scheduled" ? "bg-blue-100 text-blue-800" :
-                          "bg-gray-100 text-gray-800"
-                        }>
-                          {applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" ? (
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                          ) : applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review" ? (
-                            <Clock className="h-3 w-3 mr-1" />
-                          ) : null}
-                          {applicationStatuses[job.id as keyof typeof applicationStatuses]}
-                        </Badge>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center text-gray-500 mb-3">
                     <MapPin className="h-4 w-4 mr-2" />
-                    <span>{job.location}</span>
+                    <span>{job.location || 'Not specified'}</span>
                   </div>
                   <p className="text-gray-700">
-                    {job.description}
+                    {job.description || 'No description available.'}
                   </p>
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row justify-between border-t pt-4">
                   <div className="flex items-center text-gray-500 mb-2 sm:mb-0">
                     <Calendar className="h-4 w-4 mr-2" />
-                    <span>Deadline: {new Date(job.deadline).toLocaleDateString()}</span>
+                    <span>Deadline: {job.deadline.toDate().toLocaleDateString()}</span>
                   </div>
                   <div className="flex gap-2">
                     <Button 
                       variant="outline" 
                       className="border-blue-500 text-blue-500 hover:bg-blue-50"
-                      onClick={() => viewJobDetails(job.id)}
                     >
                       View Details
                     </Button>
                     <Button 
                       className="bg-blue-500 hover:bg-blue-600 text-white"
                       onClick={() => applyForJob(job)}
-                      disabled={isLoggedIn && userRole === 'student' && (applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review")}
                     >
-                      {!isLoggedIn ? "Login to Apply" : 
-                       (isLoggedIn && userRole === 'student' && (applicationStatuses[job.id as keyof typeof applicationStatuses] === "Applied" || applicationStatuses[job.id as keyof typeof applicationStatuses] === "Under Review")) ? "Applied" : "Apply Now"}
+                      {isLoggedIn ? "Apply Now" : "Login to Apply"}
                     </Button>
                   </div>
                 </CardFooter>
@@ -297,28 +220,7 @@ const Jobs = () => {
           )}
         </div>
         
-        {/* Pagination */}
-        <div className="mt-8">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious href="#" />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#" isActive>1</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">2</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">3</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext href="#" />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
+        {/* Pagination removed as it's not connected to Firestore yet */}
 
         {/* Application Dialog */}
         {selectedJob && (
@@ -326,7 +228,7 @@ const Jobs = () => {
             job={selectedJob}
             open={applicationDialogOpen}
             onOpenChange={setApplicationDialogOpen}
-            onApplied={handleApplicationSubmitted}
+            onApplied={() => handleApplicationSubmitted(selectedJob.id)}
           />
         )}
       </div>

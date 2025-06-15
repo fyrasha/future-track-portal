@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -33,14 +32,20 @@ import * as z from "zod";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { Job as JobFromDB, JobFormValues } from "@/types/job";
+import { Job as JobFromDB, JobFormValues, JobType } from "@/types/job";
+import { Textarea } from "@/components/ui/textarea";
 
 const jobSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters."),
   company: z.string().min(2, "Company name must be at least 2 characters."),
+  location: z.string().min(2, "Location is required."),
+  type: z.enum(["Full-time", "Part-time", "Internship", "Contract"]),
+  description: z.string().min(10, "Description must be at least 10 characters."),
   status: z.enum(["Active", "Pending", "Expired"]),
   deadline: z.date({ required_error: "A deadline date is required." }),
 });
+
+const jobTypes: JobType[] = ["Full-time", "Part-time", "Internship", "Contract"];
 
 interface JobFormDialogProps {
   isOpen: boolean;
@@ -56,6 +61,9 @@ const JobFormDialog = ({ isOpen, onOpenChange, job, onSave, isSaving }: JobFormD
     defaultValues: {
       title: "",
       company: "",
+      location: "",
+      type: "Full-time",
+      description: "",
       status: "Pending",
       deadline: undefined,
     },
@@ -69,11 +77,17 @@ const JobFormDialog = ({ isOpen, onOpenChange, job, onSave, isSaving }: JobFormD
           company: job.company,
           status: job.status,
           deadline: job.deadline.toDate(), // Convert Firestore Timestamp to JS Date
+          location: job.location || "",
+          type: job.type || "Full-time",
+          description: job.description || "",
         });
       } else {
         form.reset({
           title: "",
           company: "",
+          location: "",
+          type: "Full-time",
+          description: "",
           status: "Pending",
           deadline: new Date(new Date().setDate(new Date().getDate() + 30)),
         });
@@ -117,6 +131,58 @@ const JobFormDialog = ({ isOpen, onOpenChange, job, onSave, isSaving }: JobFormD
                   <FormLabel>Company</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. TechCorp Malaysia" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Location</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Kuala Lumpur, Malaysia" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Job Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a job type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {jobTypes.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="e.g. Describe the job role and responsibilities."
+                      className="resize-none"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

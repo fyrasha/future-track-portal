@@ -77,14 +77,34 @@ const AdminJobManagement = () => {
         applications: 0,
       });
     },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      toast.success(`Job "${variables.title}" has been created.`);
-      setIsFormOpen(false);
+    onMutate: async (newJob: JobFormValues) => {
+      await queryClient.cancelQueries({ queryKey: ["jobs"] });
+      const previousJobs = queryClient.getQueryData<Job[]>(["jobs"]);
+      queryClient.setQueryData<Job[]>(["jobs"], (old) => {
+        const optimisticJob: Job = {
+          id: `temp-${Date.now()}`,
+          ...newJob,
+          postedDate: Timestamp.now(),
+          deadline: Timestamp.fromDate(newJob.deadline),
+          applications: 0,
+        };
+        return old ? [optimisticJob, ...old] : [optimisticJob];
+      });
+      return { previousJobs };
     },
-    onError: (error) => {
+    onError: (error: Error, variables, context) => {
       toast.error(`Failed to create job: ${error.message}`);
-    }
+      if (context?.previousJobs) {
+        queryClient.setQueryData(['jobs'], context.previousJobs);
+      }
+    },
+    onSettled: (data, error, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      if (!error) {
+        toast.success(`Job "${variables.title}" has been created.`);
+        setIsFormOpen(false);
+      }
+    },
   });
 
   const updateJobMutation = useMutation({
@@ -95,17 +115,40 @@ const AdminJobManagement = () => {
         ...jobData,
         deadline: Timestamp.fromDate(jobData.deadline),
       });
-      return jobData;
+      return { id, ...jobData };
     },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      toast.success(`Job "${variables.title}" has been updated.`);
-      setIsFormOpen(false);
-      setSelectedJob(null);
+    onMutate: async (updatedJob) => {
+      await queryClient.cancelQueries({ queryKey: ["jobs"] });
+      const previousJobs = queryClient.getQueryData<Job[]>(["jobs"]);
+      queryClient.setQueryData<Job[]>(["jobs"], (old) =>
+        old?.map(job => {
+          if (job.id === updatedJob.id) {
+            const originalJob = old.find(j => j.id === updatedJob.id);
+            return {
+              ...originalJob,
+              ...updatedJob,
+              deadline: Timestamp.fromDate(updatedJob.deadline),
+            } as Job;
+          }
+          return job;
+        }) ?? []
+      );
+      return { previousJobs };
     },
-    onError: (error) => {
+    onError: (error: Error, variables, context) => {
       toast.error(`Failed to update job: ${error.message}`);
-    }
+      if (context?.previousJobs) {
+        queryClient.setQueryData(['jobs'], context.previousJobs);
+      }
+    },
+    onSettled: (data, error, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      if (!error) {
+        toast.success(`Job "${variables.title}" has been updated.`);
+        setIsFormOpen(false);
+        setSelectedJob(null);
+      }
+    },
   });
 
   const deleteJobMutation = useMutation({
@@ -113,15 +156,28 @@ const AdminJobManagement = () => {
       await deleteDoc(doc(db, "jobs", job.id));
       return job;
     },
-    onSuccess: (deletedJob) => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      toast.success(`Job "${deletedJob.title}" has been deleted.`);
+    onMutate: async (jobToDelete) => {
+      await queryClient.cancelQueries({ queryKey: ["jobs"] });
+      const previousJobs = queryClient.getQueryData<Job[]>(["jobs"]);
+      queryClient.setQueryData<Job[]>(["jobs"], (old) =>
+        old?.filter(job => job.id !== jobToDelete.id) ?? []
+      );
+      return { previousJobs };
+    },
+    onError: (error: Error, variables, context) => {
+      toast.error(`Failed to delete job: ${error.message}`);
+      if (context?.previousJobs) {
+        queryClient.setQueryData(['jobs'], context.previousJobs);
+      }
+    },
+    onSettled: (data, error, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      if (!error) {
+        toast.success(`Job "${variables.title}" has been deleted.`);
+      }
       setIsDeleteConfirmOpen(false);
       setJobToDelete(null);
     },
-    onError: (error) => {
-      toast.error(`Failed to delete job: ${error.message}`);
-    }
   });
 
   const handleAddNewJob = () => {

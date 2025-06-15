@@ -85,13 +85,6 @@ const Jobs = () => {
     setApplicationDialogOpen(true);
   };
 
-  const handleApplicationSubmitted = (jobId: string) => {
-    toast({
-      title: "Application Submitted",
-      description: "Your application has been successfully submitted.",
-    });
-  };
-
   return (
     <MainLayout>
       <div className="container mx-auto py-8 px-4">
@@ -226,14 +219,13 @@ const Jobs = () => {
         {selectedJob && (
           <JobApplicationDialog 
             job={{
-              id: 0, // Placeholder to satisfy the component's prop type which expects a number
+              id: selectedJob.id,
               title: selectedJob.title,
               company: selectedJob.company,
               location: selectedJob.location || 'Not specified',
             }}
             open={applicationDialogOpen}
             onOpenChange={setApplicationDialogOpen}
-            onApplied={() => handleApplicationSubmitted(selectedJob.id)}
           />
         )}
       </div>

@@ -14,26 +14,28 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Building, Briefcase, MapPin } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { db } from "@/lib/firebase";
+import { addDoc, collection, doc, updateDoc, increment, Timestamp } from "firebase/firestore";
 
 interface JobApplicationDialogProps {
   job: {
-    id: number;
+    id: string; // Changed from number
     title: string;
     company: string;
     location: string;
   };
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onApplied: (jobId: number) => void;
 }
 
 const JobApplicationDialog = ({
   job,
   open,
   onOpenChange,
-  onApplied,
 }: JobApplicationDialogProps) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -41,7 +43,52 @@ const JobApplicationDialog = ({
     coverLetter: "",
     resume: null as File | null,
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const applyMutation = useMutation({
+    mutationFn: async (applicationData: { name: string, email: string, phone: string, coverLetter: string, resumeName: string }) => {
+        // 1. Add application to 'applications' collection
+        await addDoc(collection(db, "applications"), {
+            jobId: job.id,
+            jobTitle: job.title,
+            companyName: job.company,
+            studentId: localStorage.getItem('userId') || "temp-student-id", // Using localStorage or placeholder
+            studentName: applicationData.name,
+            studentEmail: applicationData.email,
+            studentPhone: applicationData.phone,
+            coverLetter: applicationData.coverLetter,
+            resumeFile: applicationData.resumeName,
+            status: "Submitted",
+            appliedAt: Timestamp.now(),
+        });
+
+        // 2. Increment application count on the job document
+        const jobRef = doc(db, "jobs", job.id);
+        await updateDoc(jobRef, {
+            applications: increment(1)
+        });
+    },
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['jobs'] });
+        
+        toast({
+            title: "Application Submitted",
+            description: "Your application has been successfully submitted.",
+        });
+        
+        onOpenChange(false); // Close dialog on success
+    },
+    onError: (error: Error) => {
+        toast({
+            title: "Submission Failed",
+            description: error.message || "Could not submit your application. Please try again.",
+            variant: "destructive",
+        });
+    },
+    onSettled: () => {
+      // Reset form after submission attempt
+      setFormData({ name: "", email: "", phone: "", coverLetter: "", resume: null });
+    }
+  });
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -58,29 +105,21 @@ const JobApplicationDialog = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
-    // Mock API call to submit application
-    setTimeout(() => {
-      setIsSubmitting(false);
-      onOpenChange(false);
-      onApplied(job.id);
-
-      // Show success toast
+    if (!formData.resume) {
       toast({
-        title: "Application Submitted",
-        description: "Your application has been successfully submitted.",
+        title: "Resume is required",
+        description: "Please upload your resume before submitting.",
+        variant: "destructive",
       });
-
-      // Reset form
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        coverLetter: "",
-        resume: null,
-      });
-    }, 1000);
+      return;
+    }
+    applyMutation.mutate({
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      coverLetter: formData.coverLetter,
+      resumeName: formData.resume.name, // Storing file name for now
+    });
   };
 
   return (
@@ -189,15 +228,16 @@ const JobApplicationDialog = ({
               variant="outline"
               onClick={() => onOpenChange(false)}
               className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10"
+              disabled={applyMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               type="submit"
               className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white"
-              disabled={isSubmitting}
+              disabled={applyMutation.isPending}
             >
-              {isSubmitting ? "Submitting..." : "Submit Application"}
+              {applyMutation.isPending ? "Submitting..." : "Submit Application"}
             </Button>
           </DialogFooter>
         </form>

@@ -1,7 +1,6 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, updateDoc, Timestamp, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, Timestamp, query, where, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/components/ui/use-toast";
 import MainLayout from "@/components/MainLayout";
 import {
@@ -43,58 +42,99 @@ const AdminEmployerReview = () => {
   const { toast } = useToast();
 
   const { data: employers, isLoading, error } = useQuery<Employer[], Error>({
-    queryKey: ['employers'],
+    queryKey: ['employers-from-jobs'],
     queryFn: async () => {
-      console.log("Fetching employers from 'employers' collection...");
-      const employersCollection = collection(db, "employers");
-      const q = query(employersCollection, orderBy("createdAt", "desc"));
-      
-      try {
-        const querySnapshot = await getDocs(q);
-        console.log(`Query successful, found ${querySnapshot.size} documents.`);
-        
-        if (querySnapshot.empty) {
-          console.log("The 'employers' collection is empty or query returned no results.");
-          return [];
-        }
+      console.log("Fetching unique companies from 'job' collection...");
+      const jobsCollection = collection(db, "job");
+      const jobsSnapshot = await getDocs(jobsCollection);
 
-        const employerList = querySnapshot.docs.map(doc => {
-          const data = doc.data();
-          console.log(`Processing document ${doc.id}:`, JSON.stringify(data, null, 2));
-          return {
-            id: doc.id,
-            ...(data as Omit<Employer, 'id'>)
-          };
-        });
-
-        // sort by status: Pending first
-        employerList.sort((a, b) => {
-          if (a.status === 'Pending' && b.status !== 'Pending') return -1;
-          if (a.status !== 'Pending' && b.status === 'Pending') return 1;
-          // if statuses are same, secondary sort by date is already handled by query
-          return 0;
-        });
-
-        console.log("Returning processed and sorted employers:", employerList);
-        return employerList;
-      } catch (err) {
-        console.error("Error fetching and processing employers from Firestore:", err);
-        // Let react-query handle the error state
-        throw err;
+      if (jobsSnapshot.empty) {
+        console.log("The 'job' collection is empty.");
+        return [];
       }
+
+      const companiesMap = new Map<string, Omit<Employer, 'status' | 'id'>>();
+      jobsSnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const company = data.company;
+        if (company && typeof company === 'object' && company.email) {
+          const email = company.email;
+          if (!companiesMap.has(email)) {
+            companiesMap.set(email, {
+              companyName: company.name || "Unnamed Company",
+              email: email,
+              createdAt: data.postedDate || Timestamp.now(),
+            });
+          }
+        }
+      });
+
+      if (companiesMap.size === 0) return [];
+      
+      const employerEmails = Array.from(companiesMap.keys());
+      const employersRef = collection(db, "employers");
+      // Firestore 'in' query is limited to 30 elements. If more are needed, batching is required.
+      const q = query(employersRef, where('email', 'in', employerEmails));
+      const employersSnapshot = await getDocs(q);
+      
+      const statusMap = new Map<string, 'Pending' | 'Verified' | 'Rejected'>();
+      employersSnapshot.forEach(doc => {
+          const data = doc.data();
+          statusMap.set(data.email, data.status);
+      });
+
+      const employerList: Employer[] = employerEmails.map(email => {
+          const companyData = companiesMap.get(email)!;
+          return {
+              ...companyData,
+              id: email, // Use email as ID for the list
+              status: statusMap.get(email) || 'Pending',
+          };
+      });
+
+      employerList.sort((a, b) => {
+        if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+        if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+        if (a.createdAt && b.createdAt) {
+          return b.createdAt.toMillis() - a.createdAt.toMillis();
+        }
+        return 0;
+      });
+      
+      console.log("Returning processed and sorted employers from jobs:", employerList);
+      return employerList;
     },
+    onError: (err) => {
+      console.error("Error fetching employers from jobs:", err);
+    }
   });
 
   const updateEmployerStatus = useMutation({
-    mutationFn: async ({ employerId, status }: { employerId: string, status: 'Verified' | 'Rejected' }) => {
-      const employerDocRef = doc(db, 'employers', employerId);
-      await updateDoc(employerDocRef, { status });
+    mutationFn: async ({ employer, status }: { employer: Employer, status: 'Verified' | 'Rejected' }) => {
+      const employersRef = collection(db, 'employers');
+      const q = query(employersRef, where("email", "==", employer.email));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        console.log(`Employer with email ${employer.email} not found, creating new entry.`);
+        await addDoc(collection(db, "employers"), {
+            companyName: employer.companyName,
+            email: employer.email,
+            status: status,
+            createdAt: serverTimestamp(),
+        });
+      } else {
+        console.log(`Employer with email ${employer.email} found, updating status.`);
+        const employerDoc = querySnapshot.docs[0];
+        await updateDoc(employerDoc.ref, { status });
+      }
     },
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['employers-from-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['employers'] });
       toast({
         title: "Success",
-        description: `Employer has been ${variables.status.toLowerCase()}.`,
+        description: `Employer status has been updated to ${variables.status.toLowerCase()}.`,
       });
     },
     onError: (err, variables) => {
@@ -107,8 +147,8 @@ const AdminEmployerReview = () => {
     }
   });
 
-  const handleUpdateStatus = (employerId: string, status: 'Verified' | 'Rejected') => {
-    updateEmployerStatus.mutate({ employerId, status });
+  const handleUpdateStatus = (employer: Employer, status: 'Verified' | 'Rejected') => {
+    updateEmployerStatus.mutate({ employer, status });
   };
 
   const getStatusBadge = (status: Employer['status']) => {
@@ -196,10 +236,10 @@ const AdminEmployerReview = () => {
                         <div className="flex space-x-2">
                           {employer.status === 'Pending' && (
                             <>
-                              <Button variant="outline" size="sm" className="text-green-600 hover:text-green-700" onClick={() => handleUpdateStatus(employer.id, 'Verified')}>
+                              <Button variant="outline" size="sm" className="text-green-600 hover:text-green-700" onClick={() => handleUpdateStatus(employer, 'Verified')}>
                                 Approve
                               </Button>
-                              <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleUpdateStatus(employer.id, 'Rejected')}>
+                              <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleUpdateStatus(employer, 'Rejected')}>
                                 Reject
                               </Button>
                             </>

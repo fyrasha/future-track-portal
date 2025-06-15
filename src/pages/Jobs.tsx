@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -32,8 +31,8 @@ import { useToast } from "@/hooks/use-toast";
 import JobApplicationDialog from "@/components/JobApplicationDialog";
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
-import { Job } from "@/types/job";
+import { collection, getDocs, query, where, orderBy, documentId } from "firebase/firestore";
+import { Job, JobWithCompanyStatus } from "@/types/job";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
@@ -41,7 +40,7 @@ const Jobs = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [jobType, setJobType] = useState("all");
   const { toast } = useToast();
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [selectedJob, setSelectedJob] = useState<JobWithCompanyStatus | null>(null);
   const [applicationDialogOpen, setApplicationDialogOpen] = useState(false);
   
   const [isLoggedIn] = useState(() => {
@@ -52,8 +51,8 @@ const Jobs = () => {
     return localStorage.getItem('userRole') as 'student' | 'admin' || 'student';
   });
 
-  const { data: jobListings, isLoading, error } = useQuery<Job[]>({
-    queryKey: ['jobs', 'visible', userRole],
+  const { data: jobListings, isLoading, error } = useQuery<JobWithCompanyStatus[]>({
+    queryKey: ['jobs', 'visible', userRole, 'withCompanyStatus'],
     queryFn: async () => {
       const jobsCollection = collection(db, "jobs");
       
@@ -62,10 +61,31 @@ const Jobs = () => {
         statusesToShow.push('Pending');
       }
 
-      const q = query(jobsCollection, where("status", "in", statusesToShow), orderBy("postedDate", "desc"));
+      const jobsQuery = query(jobsCollection, where("status", "in", statusesToShow), orderBy("postedDate", "desc"));
       
-      const jobSnapshot = await getDocs(q);
-      return jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
+      const jobSnapshot = await getDocs(jobsQuery);
+      const jobs: Job[] = jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
+
+      if (jobs.length === 0) {
+        return [];
+      }
+
+      const companyIds = [...new Set(jobs.map(job => job.companyId).filter(Boolean))];
+
+      const employersMap = new Map<string, 'Verified' | 'Pending' | 'Rejected'>();
+      if (companyIds.length > 0) {
+        const employersCollection = collection(db, "employers");
+        const employersQuery = query(employersCollection, where(documentId(), 'in', companyIds));
+        const employerSnapshot = await getDocs(employersQuery);
+        employerSnapshot.forEach(doc => {
+          employersMap.set(doc.id, (doc.data() as { status: 'Verified' | 'Pending' | 'Rejected' }).status);
+        });
+      }
+
+      return jobs.map(job => ({
+        ...job,
+        isCompanyVerified: employersMap.get(job.companyId) === 'Verified',
+      }));
     },
   });
   
@@ -80,7 +100,7 @@ const Jobs = () => {
     return matchesSearch && matchesType;
   }) ?? [];
 
-  const applyForJob = (job: Job) => {
+  const applyForJob = (job: JobWithCompanyStatus) => {
     if (!isLoggedIn) {
       toast({
         title: "Login Required",
@@ -172,6 +192,12 @@ const Jobs = () => {
                       <CardDescription className="flex items-center mt-1">
                         <Building className="h-4 w-4 mr-1" />
                         <span className="text-unisphere-blue">{job.company}</span>
+                        {job.isCompanyVerified && (
+                          <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-100/80">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Verified
+                          </Badge>
+                        )}
                       </CardDescription>
                     </div>
                     <div className="flex flex-col items-end gap-2">

@@ -19,6 +19,11 @@ export interface Job {
   description?: string;
 }
 
+// Extends Job type with company verification status
+export interface JobWithCompanyStatus extends Job {
+  isCompanyVerified: boolean;
+}
+
 // Data shape for the form used to create/edit jobs
 export type JobFormValues = {
   title: string;

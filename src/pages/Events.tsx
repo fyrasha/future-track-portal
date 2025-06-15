@@ -1,3 +1,4 @@
+
 import MainLayout from '@/components/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,14 +9,30 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where, orderBy, doc, runTransaction, Timestamp, increment } from 'firebase/firestore';
 import { Event } from '@/types/event';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 const Events = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isLoggedIn] = useState(() => localStorage.getItem('userLoggedIn') === 'true');
-  const [userId] = useState(() => localStorage.getItem('userId'));
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const loggedIn = localStorage.getItem('userLoggedIn') === 'true';
+      const id = localStorage.getItem('userId');
+      setIsLoggedIn(loggedIn);
+      setUserId(id);
+    };
+
+    checkAuth();
+    window.addEventListener('storage', checkAuth);
+
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+    };
+  }, []);
 
   const { data: events, isLoading, error } = useQuery<Event[]>({
     queryKey: ['events', 'public'],

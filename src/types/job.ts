@@ -8,6 +8,7 @@ export interface Job {
   id: string; // Document ID
   title: string;
   company: string;
+  companyId: string;
   status: 'Active' | 'Pending' | 'Expired';
   applications: number;
   postedDate: Timestamp;

@@ -1,7 +1,6 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where, doc, updateDoc, Timestamp } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, Timestamp, query, orderBy } from "firebase/firestore";
 import { useToast } from "@/components/ui/use-toast";
 import MainLayout from "@/components/MainLayout";
 import {
@@ -45,9 +44,8 @@ const AdminEmployerReview = () => {
   const { data: employers, isLoading, error } = useQuery<Employer[]>({
     queryKey: ['employers'],
     queryFn: async () => {
-      const usersCollection = collection(db, "users");
-      const q = query(usersCollection, where("role", "==", "employer"));
-      const querySnapshot = await getDocs(q);
+      const employersCollection = collection(db, "employers");
+      const querySnapshot = await getDocs(query(employersCollection, orderBy("createdAt", "desc")));
       const employerList = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...(doc.data() as Omit<Employer, 'id'>)
@@ -56,6 +54,7 @@ const AdminEmployerReview = () => {
       employerList.sort((a, b) => {
         if (a.status === 'Pending' && b.status !== 'Pending') return -1;
         if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+        // if statuses are same, secondary sort by date is already handled by query
         return 0;
       });
       return employerList;
@@ -64,7 +63,7 @@ const AdminEmployerReview = () => {
 
   const updateEmployerStatus = useMutation({
     mutationFn: async ({ employerId, status }: { employerId: string, status: 'Verified' | 'Rejected' }) => {
-      const employerDocRef = doc(db, 'users', employerId);
+      const employerDocRef = doc(db, 'employers', employerId);
       await updateDoc(employerDocRef, { status });
     },
     onSuccess: (_, variables) => {

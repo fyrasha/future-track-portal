@@ -225,7 +225,12 @@ const Jobs = () => {
         {/* Application Dialog */}
         {selectedJob && (
           <JobApplicationDialog 
-            job={selectedJob}
+            job={{
+              id: 0, // Placeholder to satisfy the component's prop type which expects a number
+              title: selectedJob.title,
+              company: selectedJob.company,
+              location: selectedJob.location || 'Not specified',
+            }}
             open={applicationDialogOpen}
             onOpenChange={setApplicationDialogOpen}
             onApplied={() => handleApplicationSubmitted(selectedJob.id)}

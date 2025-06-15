@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -52,10 +53,17 @@ const Jobs = () => {
   });
 
   const { data: jobListings, isLoading, error } = useQuery<Job[]>({
-    queryKey: ['jobs', 'visible'],
+    queryKey: ['jobs', 'visible', userRole],
     queryFn: async () => {
       const jobsCollection = collection(db, "jobs");
-      const q = query(jobsCollection, where("status", "in", ["Active", "Pending"]), orderBy("postedDate", "desc"));
+      
+      let statusesToShow: ('Active' | 'Pending')[] = ['Active'];
+      if (userRole === 'admin') {
+        statusesToShow.push('Pending');
+      }
+
+      const q = query(jobsCollection, where("status", "in", statusesToShow), orderBy("postedDate", "desc"));
+      
       const jobSnapshot = await getDocs(q);
       return jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
     },

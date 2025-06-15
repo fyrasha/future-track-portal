@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import MainLayout from "@/components/MainLayout";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 const Login = () => {
   const { toast } = useToast();
@@ -25,24 +27,52 @@ const Login = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      // Set login state in localStorage
-      localStorage.setItem('userLoggedIn', 'true');
-      localStorage.setItem('userRole', 'student');
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
+
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      let userRole = 'student';
+      let userName = '';
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        userRole = userData.role || 'student';
+        userName = userData.firstName || '';
+      }
       
+      localStorage.setItem('userLoggedIn', 'true');
+      localStorage.setItem('userRole', userRole);
+      localStorage.setItem('userId', user.uid);
+      localStorage.setItem('userName', userName);
+      window.dispatchEvent(new Event("storage"));
+
       toast({
         title: "Login successful!",
-        description: "Redirecting to dashboard...",
+        description: "Redirecting to your dashboard...",
       });
+      
+      navigate("/dashboard");
+
+    } catch (error: any) {
+      let errorMessage = "Invalid email or password. Please try again.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMessage = "Invalid email or password. Please try again.";
+      }
+      toast({
+        title: "Login Failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
       setIsSubmitting(false);
-      // Redirect to jobs page for students
-      navigate("/jobs");
-    }, 1500);
+    }
   };
 
   return (

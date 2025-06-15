@@ -9,6 +9,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { User, LogOut, Settings, LayoutDashboard, Calendar, Briefcase, FileText, Users, BarChart3, CalendarDays, EllipsisVertical, Building } from 'lucide-react';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -34,9 +36,11 @@ const Header = () => {
     };
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut(auth);
     localStorage.removeItem('userLoggedIn');
     localStorage.removeItem('userRole');
+    localStorage.removeItem('userId');
     localStorage.removeItem('userName');
     setIsLoggedIn(false);
     setUserRole(null);

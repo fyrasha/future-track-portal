@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,7 +58,7 @@ const JobApplicationDialog = ({
             studentPhone: applicationData.phone,
             coverLetter: applicationData.coverLetter,
             resumeFile: applicationData.resumeName,
-            status: "Submitted",
+            status: "Applied",
             appliedAt: Timestamp.now(),
         });
 
@@ -248,3 +249,4 @@ const JobApplicationDialog = ({
 };
 
 export default JobApplicationDialog;
+

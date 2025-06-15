@@ -140,7 +140,7 @@ const Chatbot = () => {
             <CardHeader className="bg-unisphere-blue text-white rounded-t-lg">
               <CardTitle className="text-lg">UniSphere Assistant</CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col p-0">
+            <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
                {!apiKey && (
                 <div className="p-4 border-b bg-yellow-50">
                   <p className="text-sm text-yellow-800 mb-2">

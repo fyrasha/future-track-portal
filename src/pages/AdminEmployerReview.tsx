@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, updateDoc, Timestamp, query, orderBy } from "firebase/firestore";
@@ -41,23 +42,46 @@ const AdminEmployerReview = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: employers, isLoading, error } = useQuery<Employer[]>({
+  const { data: employers, isLoading, error } = useQuery<Employer[], Error>({
     queryKey: ['employers'],
     queryFn: async () => {
+      console.log("Fetching employers from 'employers' collection...");
       const employersCollection = collection(db, "employers");
-      const querySnapshot = await getDocs(query(employersCollection, orderBy("createdAt", "desc")));
-      const employerList = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...(doc.data() as Omit<Employer, 'id'>)
-      }));
-      // sort by status: Pending first
-      employerList.sort((a, b) => {
-        if (a.status === 'Pending' && b.status !== 'Pending') return -1;
-        if (a.status !== 'Pending' && b.status === 'Pending') return 1;
-        // if statuses are same, secondary sort by date is already handled by query
-        return 0;
-      });
-      return employerList;
+      const q = query(employersCollection, orderBy("createdAt", "desc"));
+      
+      try {
+        const querySnapshot = await getDocs(q);
+        console.log(`Query successful, found ${querySnapshot.size} documents.`);
+        
+        if (querySnapshot.empty) {
+          console.log("The 'employers' collection is empty or query returned no results.");
+          return [];
+        }
+
+        const employerList = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          console.log(`Processing document ${doc.id}:`, JSON.stringify(data, null, 2));
+          return {
+            id: doc.id,
+            ...(data as Omit<Employer, 'id'>)
+          };
+        });
+
+        // sort by status: Pending first
+        employerList.sort((a, b) => {
+          if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+          if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+          // if statuses are same, secondary sort by date is already handled by query
+          return 0;
+        });
+
+        console.log("Returning processed and sorted employers:", employerList);
+        return employerList;
+      } catch (err) {
+        console.error("Error fetching and processing employers from Firestore:", err);
+        // Let react-query handle the error state
+        throw err;
+      }
     },
   });
 
@@ -155,7 +179,7 @@ const AdminEmployerReview = () => {
                 ) : error ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-destructive py-8">
-                      Failed to load employers.
+                      Failed to load employers. {error && `Details: ${error.message}`}
                     </TableCell>
                   </TableRow>
                 ) : employers && employers.length > 0 ? (

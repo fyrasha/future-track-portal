@@ -28,6 +28,7 @@ import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import ApplicationDetailsDialog from "@/components/ApplicationDetailsDialog";
 
 interface Application {
   id: string;
@@ -36,11 +37,14 @@ interface Application {
   location?: string;
   appliedAt: Timestamp;
   status: string;
+  nextSteps?: string;
 }
 
 const Applications = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -103,6 +107,11 @@ const Applications = () => {
       default:
         return <Badge>{status}</Badge>;
     }
+  };
+
+  const handleViewDetails = (application: Application) => {
+    setSelectedApplication(application);
+    setIsDialogOpen(true);
   };
 
   if (!isLoggedIn) {
@@ -203,9 +212,14 @@ const Applications = () => {
                     </TableCell>
                     <TableCell>{application.appliedAt.toDate().toLocaleDateString()}</TableCell>
                     <TableCell>{getStatusBadge(application.status)}</TableCell>
-                    <TableCell>{"—"}</TableCell>
+                    <TableCell>{application.nextSteps || "—"}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="outline" size="sm" className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10"
+                        onClick={() => handleViewDetails(application)}
+                      >
                         View Details
                       </Button>
                     </TableCell>
@@ -223,6 +237,11 @@ const Applications = () => {
           </Table>
         </div>
       </div>
+      <ApplicationDetailsDialog
+        application={selectedApplication}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+      />
     </MainLayout>
   );
 };

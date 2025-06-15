@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import MainLayout from "@/components/MainLayout";
 import { 
@@ -46,7 +45,8 @@ import {
   doc, 
   Timestamp,
   query,
-  orderBy
+  orderBy,
+  where
 } from "firebase/firestore";
 import { Job, JobFormValues } from "@/types/job";
 
@@ -70,8 +70,19 @@ const AdminJobManagement = () => {
 
   const addJobMutation = useMutation({
     mutationFn: async (newJob: JobFormValues) => {
+      const employersCollection = collection(db, "employers");
+      // Assuming company name field is 'name' in 'employers' collection.
+      const q = query(employersCollection, where("name", "==", newJob.company));
+      const companySnapshot = await getDocs(q);
+
+      if (companySnapshot.empty) {
+        throw new Error(`Employer "${newJob.company}" not found. Please ensure the employer exists or check for typos.`);
+      }
+      const companyId = companySnapshot.docs[0].id;
+      
       return await addDoc(collection(db, "jobs"), {
         ...newJob,
+        companyId,
         postedDate: Timestamp.now(),
         deadline: Timestamp.fromDate(newJob.deadline),
         applications: 0,
@@ -84,6 +95,7 @@ const AdminJobManagement = () => {
         const optimisticJob: Job = {
           id: `temp-${Date.now()}`,
           ...newJob,
+          companyId: `optimistic-id-${Date.now()}`, // Placeholder for optimistic update
           postedDate: Timestamp.now(),
           deadline: Timestamp.fromDate(newJob.deadline),
           applications: 0,

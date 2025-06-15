@@ -1,6 +1,8 @@
 
-import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, collection, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,64 +15,126 @@ import {
   Phone,
   Briefcase,
   Star,
-  ArrowLeft
+  ArrowLeft,
+  Calendar
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Job } from "@/types/job";
 
-// Mock company data
-const mockCompanies = {
-  "1": {
-    id: 1,
-    name: "TechCorp Malaysia",
-    logo: "/placeholder.svg",
-    description: "Leading technology company specializing in innovative software solutions and digital transformation services.",
-    industry: "Technology",
-    size: "500-1000 employees",
-    founded: "2010",
-    website: "https://techcorp.my",
-    email: "careers@techcorp.my",
-    phone: "+60 3-1234 5678",
-    location: "Kuala Lumpur, Malaysia",
-    rating: 4.5,
-    benefits: ["Health Insurance", "Flexible Working Hours", "Professional Development", "Performance Bonus"],
-    culture: "We foster innovation, collaboration, and continuous learning in a dynamic work environment.",
-    openPositions: [
-      { id: 1, title: "Software Engineer Intern", type: "Internship", posted: "2025-05-15" },
-      { id: 6, title: "Senior Developer", type: "Full-time", posted: "2025-05-10" }
-    ]
-  },
-  "2": {
-    id: 2,
-    name: "Analytics Pro",
-    logo: "/placeholder.svg",
-    description: "Data analytics and business intelligence company helping organizations make data-driven decisions.",
-    industry: "Data Analytics",
-    size: "100-500 employees",
-    founded: "2015",
-    website: "https://analyticspro.my",
-    email: "hr@analyticspro.my",
-    phone: "+60 3-8765 4321",
-    location: "Petaling Jaya, Malaysia",
-    rating: 4.2,
-    benefits: ["Remote Work", "Learning Budget", "Health Coverage", "Stock Options"],
-    culture: "Data-driven culture with emphasis on analytical thinking and innovation.",
-    openPositions: [
-      { id: 2, title: "Data Analyst", type: "Full-time", posted: "2025-05-10" }
-    ]
-  }
-};
+interface Company {
+  id: string;
+  companyName: string;
+  email: string;
+  status: 'Pending' | 'Verified' | 'Rejected';
+  createdAt: Timestamp;
+  description?: string;
+  industry?: string;
+  size?: string;
+  founded?: string;
+  website?: string;
+  phone?: string;
+  location?: string;
+  rating?: number;
+  benefits?: string[];
+  culture?: string;
+}
 
 const CompanyDetails = () => {
-  const { id } = useParams();
-  const [company, setCompany] = useState<any>(null);
+  const { id } = useParams<{ id: string }>();
 
-  useEffect(() => {
-    if (id && mockCompanies[id as keyof typeof mockCompanies]) {
-      setCompany(mockCompanies[id as keyof typeof mockCompanies]);
-    }
-  }, [id]);
+  const { data: company, isLoading: isLoadingCompany, error: companyError } = useQuery<Company | null>({
+    queryKey: ['company', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const companyDocRef = doc(db, 'users', id);
+      const companyDocSnap = await getDoc(companyDocRef);
+      if (companyDocSnap.exists() && companyDocSnap.data().role === 'employer') {
+        return { id: companyDocSnap.id, ...companyDocSnap.data() } as Company;
+      }
+      return null;
+    },
+    enabled: !!id,
+  });
 
-  if (!company) {
+  const { data: openPositions, isLoading: isLoadingJobs } = useQuery<Job[]>({
+    queryKey: ['company-jobs', id],
+    queryFn: async () => {
+      if (!id) return [];
+      const jobsCollection = collection(db, "jobs");
+      // Only show Active jobs for the company
+      const q = query(jobsCollection, where("companyId", "==", id), where("status", "==", "Active"));
+      const jobSnapshot = await getDocs(q);
+      return jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
+    },
+    enabled: !!id,
+  });
+
+  if (isLoadingCompany || isLoadingJobs) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto py-8 px-4">
+          <Skeleton className="h-10 w-40 mb-6" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-start space-x-4">
+                    <Skeleton className="w-16 h-16 rounded-lg" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-8 w-3/4" />
+                      <Skeleton className="h-5 w-1/2" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-2/3 mb-6" />
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i}>
+                        <Skeleton className="h-5 w-20 mb-1" />
+                        <Skeleton className="h-5 w-32" />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader><Skeleton className="h-7 w-48" /></CardHeader>
+                <CardContent className="space-y-4">
+                  {[...Array(2)].map((_, i) => (
+                    <div key={i} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-2">
+                           <Skeleton className="h-5 w-40" />
+                           <Skeleton className="h-4 w-24" />
+                        </div>
+                        <Skeleton className="h-9 w-24 rounded-md" />
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader>
+                <CardContent className="space-y-4">
+                  <Skeleton className="h-5 w-full" />
+                  <Skeleton className="h-5 w-full" />
+                  <Skeleton className="h-5 w-full" />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (companyError || !company) {
     return (
       <MainLayout>
         <div className="container mx-auto py-8 px-4">
@@ -114,59 +178,65 @@ const CompanyDetails = () => {
                     <Building className="h-8 w-8 text-unisphere-blue" />
                   </div>
                   <div className="flex-1">
-                    <CardTitle className="text-2xl text-unisphere-darkBlue">{company.name}</CardTitle>
+                    <CardTitle className="text-2xl text-unisphere-darkBlue">{company.companyName}</CardTitle>
                     <div className="flex items-center mt-2 space-x-4">
-                      <div className="flex items-center">
-                        <MapPin className="h-4 w-4 mr-1 text-gray-500" />
-                        <span className="text-gray-600">{company.location}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Star className="h-4 w-4 mr-1 text-yellow-500" />
-                        <span className="text-gray-600">{company.rating}/5.0</span>
-                      </div>
+                      {company.location && (
+                        <div className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-1 text-gray-500" />
+                          <span className="text-gray-600">{company.location}</span>
+                        </div>
+                      )}
+                      {company.rating && (
+                        <div className="flex items-center">
+                          <Star className="h-4 w-4 mr-1 text-yellow-500" />
+                          <span className="text-gray-600">{company.rating}/5.0</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700 mb-4">{company.description}</p>
+                {company.description && <p className="text-gray-700 mb-4">{company.description}</p>}
                 
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div>
+                  {company.industry && <div>
                     <h4 className="font-medium text-gray-900 mb-1">Industry</h4>
                     <p className="text-gray-600">{company.industry}</p>
-                  </div>
-                  <div>
+                  </div>}
+                  {company.size && <div>
                     <h4 className="font-medium text-gray-900 mb-1">Company Size</h4>
                     <p className="text-gray-600">{company.size}</p>
-                  </div>
-                  <div>
+                  </div>}
+                  {company.founded && <div>
                     <h4 className="font-medium text-gray-900 mb-1">Founded</h4>
                     <p className="text-gray-600">{company.founded}</p>
-                  </div>
-                  <div>
+                  </div>}
+                  {company.website && <div>
                     <h4 className="font-medium text-gray-900 mb-1">Website</h4>
                     <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-unisphere-blue hover:underline">
                       Visit Website
                     </a>
-                  </div>
+                  </div>}
                 </div>
 
-                <div className="mb-6">
+                {company.culture && <div className="mb-6">
                   <h4 className="font-medium text-gray-900 mb-3">Company Culture</h4>
                   <p className="text-gray-700">{company.culture}</p>
-                </div>
+                </div>}
 
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Benefits & Perks</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {company.benefits.map((benefit: string, index: number) => (
-                      <Badge key={index} variant="outline" className="bg-blue-50">
-                        {benefit}
-                      </Badge>
-                    ))}
+                {company.benefits && company.benefits.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3">Benefits & Perks</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {company.benefits.map((benefit: string, index: number) => (
+                        <Badge key={index} variant="outline" className="bg-blue-50">
+                          {benefit}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 
@@ -174,28 +244,35 @@ const CompanyDetails = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Open Positions</CardTitle>
-                <CardDescription>Current job openings at {company.name}</CardDescription>
+                <CardDescription>Current job openings at {company.companyName}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {company.openPositions.map((position: any) => (
-                    <div key={position.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h5 className="font-medium text-gray-900">{position.title}</h5>
-                          <div className="flex items-center mt-1 space-x-4">
-                            <Badge variant="outline">{position.type}</Badge>
-                            <span className="text-sm text-gray-500">Posted: {new Date(position.posted).toLocaleDateString()}</span>
+                  {openPositions && openPositions.length > 0 ? (
+                    openPositions.map((position) => (
+                      <div key={position.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h5 className="font-medium text-gray-900">{position.title}</h5>
+                            <div className="flex items-center mt-1 space-x-4">
+                              <Badge variant="outline">{position.type}</Badge>
+                              <span className="text-sm text-gray-500">Posted: {position.postedDate.toDate().toLocaleDateString()}</span>
+                            </div>
                           </div>
+                          <Link to={`/jobs`}>
+                            <Button size="sm" className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white">
+                              View Job
+                            </Button>
+                          </Link>
                         </div>
-                        <Link to={`/jobs/${position.id}`}>
-                          <Button size="sm" className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white">
-                            View Job
-                          </Button>
-                        </Link>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Briefcase className="h-10 w-10 mx-auto text-gray-300 mb-4" />
+                      <p className="text-gray-500">No open positions at this company right now.</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -214,16 +291,16 @@ const CompanyDetails = () => {
                     {company.email}
                   </a>
                 </div>
-                <div className="flex items-center">
+                {company.phone && <div className="flex items-center">
                   <Phone className="h-4 w-4 mr-3 text-gray-500" />
                   <span className="text-gray-700">{company.phone}</span>
-                </div>
-                <div className="flex items-center">
+                </div>}
+                {company.website && <div className="flex items-center">
                   <Globe className="h-4 w-4 mr-3 text-gray-500" />
                   <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-unisphere-blue hover:underline">
                     Company Website
                   </a>
-                </div>
+                </div>}
               </CardContent>
             </Card>
 
@@ -234,16 +311,16 @@ const CompanyDetails = () => {
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Open Positions</span>
-                  <span className="font-medium">{company.openPositions.length}</span>
+                  <span className="font-medium">{openPositions?.length || 0}</span>
                 </div>
-                <div className="flex justify-between">
+                {company.rating && <div className="flex justify-between">
                   <span className="text-gray-600">Company Rating</span>
                   <span className="font-medium">{company.rating}/5.0</span>
-                </div>
-                <div className="flex justify-between">
+                </div>}
+                {company.founded && <div className="flex justify-between">
                   <span className="text-gray-600">Years in Business</span>
                   <span className="font-medium">{new Date().getFullYear() - parseInt(company.founded)} years</span>
-                </div>
+                </div>}
               </CardContent>
             </Card>
           </div>

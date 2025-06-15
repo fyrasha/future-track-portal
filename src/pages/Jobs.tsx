@@ -196,12 +196,14 @@ const Jobs = () => {
                     <span>Deadline: {job.deadline.toDate().toLocaleDateString()}</span>
                   </div>
                   <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      className="border-blue-500 text-blue-500 hover:bg-blue-50"
-                    >
-                      View Details
-                    </Button>
+                    <Link to={`/company/${job.companyId}`}>
+                      <Button 
+                        variant="outline" 
+                        className="border-blue-500 text-blue-500 hover:bg-blue-50"
+                      >
+                        View Details
+                      </Button>
+                    </Link>
                     <Button 
                       className="bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-400"
                       onClick={() => applyForJob(job)}

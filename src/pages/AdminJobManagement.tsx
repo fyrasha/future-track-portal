@@ -35,64 +35,124 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-const initialJobListings = [
-  { id: 1, title: "Software Engineer Intern", company: "TechCorp Malaysia", status: "Active", applications: 23, postedDate: "2025-06-01", deadline: "2025-06-30" },
-  { id: 2, title: "Data Analyst", company: "Analytics Pro", status: "Active", applications: 18, postedDate: "2025-06-05", deadline: "2025-06-15" },
-  { id: 3, title: "Marketing Assistant", company: "Brand Masters", status: "Pending", applications: 8, postedDate: "2025-06-10", deadline: "2025-06-20" },
-  { id: 4, title: "UX/UI Design Intern", company: "Creative Solutions", status: "Active", applications: 15, postedDate: "2025-06-12", deadline: "2025-07-01" },
-  { id: 5, title: "Finance Analyst", company: "Global Finance", status: "Expired", applications: 12, postedDate: "2025-05-14", deadline: "2025-05-25" }
-];
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { db } from "@/lib/firebase";
+import { 
+  collection, 
+  getDocs, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  Timestamp,
+  query,
+  orderBy
+} from "firebase/firestore";
+import { Job, JobFormValues } from "@/types/job";
 
 const AdminJobManagement = () => {
-  const [jobListings, setJobListings] = useState(initialJobListings.map(j => ({...j, postedDate: new Date(j.postedDate), deadline: new Date(j.deadline)})));
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [selectedJob, setSelectedJob] = useState(null);
-  const [jobToDelete, setJobToDelete] = useState(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
+
+  const queryClient = useQueryClient();
+
+  const { data: jobListings, isLoading, error } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: async (): Promise<Job[]> => {
+      const jobsCollection = collection(db, "jobs");
+      const q = query(jobsCollection, orderBy("postedDate", "desc"));
+      const jobSnapshot = await getDocs(q);
+      return jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
+    },
+  });
+
+  const addJobMutation = useMutation({
+    mutationFn: async (newJob: JobFormValues) => {
+      return await addDoc(collection(db, "jobs"), {
+        ...newJob,
+        postedDate: Timestamp.now(),
+        deadline: Timestamp.fromDate(newJob.deadline),
+        applications: 0,
+      });
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success(`Job "${variables.title}" has been created.`);
+      setIsFormOpen(false);
+    },
+    onError: (error) => {
+      toast.error(`Failed to create job: ${error.message}`);
+    }
+  });
+
+  const updateJobMutation = useMutation({
+    mutationFn: async ({ id, ...jobData }: { id: string } & JobFormValues) => {
+      if (!id) throw new Error("Job ID is missing");
+      const jobRef = doc(db, "jobs", id);
+      await updateDoc(jobRef, {
+        ...jobData,
+        deadline: Timestamp.fromDate(jobData.deadline),
+      });
+      return jobData;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success(`Job "${variables.title}" has been updated.`);
+      setIsFormOpen(false);
+      setSelectedJob(null);
+    },
+    onError: (error) => {
+      toast.error(`Failed to update job: ${error.message}`);
+    }
+  });
+
+  const deleteJobMutation = useMutation({
+    mutationFn: async (job: Job) => {
+      await deleteDoc(doc(db, "jobs", job.id));
+      return job;
+    },
+    onSuccess: (deletedJob) => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success(`Job "${deletedJob.title}" has been deleted.`);
+      setIsDeleteConfirmOpen(false);
+      setJobToDelete(null);
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete job: ${error.message}`);
+    }
+  });
 
   const handleAddNewJob = () => {
     setSelectedJob(null);
     setIsFormOpen(true);
   };
 
-  const handleEditJob = (job) => {
+  const handleEditJob = (job: Job) => {
     setSelectedJob(job);
     setIsFormOpen(true);
   };
 
-  const handleDeleteJob = (job) => {
+  const handleDeleteJob = (job: Job) => {
     setJobToDelete(job);
     setIsDeleteConfirmOpen(true);
   };
   
   const confirmDelete = () => {
       if (!jobToDelete) return;
-      setJobListings(jobListings.filter(j => j.id !== jobToDelete.id));
-      toast.success(`Job "${jobToDelete.title}" has been deleted.`);
-      setIsDeleteConfirmOpen(false);
-      setJobToDelete(null);
+      deleteJobMutation.mutate(jobToDelete);
   }
 
-  const handleSaveJob = (data) => {
+  const handleSaveJob = (data: JobFormValues) => {
     if (selectedJob) {
-      // Update
-      setJobListings(jobListings.map(j => j.id === selectedJob.id ? { ...j, ...data } : j));
-      toast.success(`Job "${data.title}" has been updated.`);
+      updateJobMutation.mutate({ ...data, id: selectedJob.id });
     } else {
-      // Create
-      const newJob = {
-        ...data,
-        id: jobListings.length > 0 ? Math.max(...jobListings.map(j => j.id)) + 1 : 1,
-        applications: 0,
-        postedDate: new Date(),
-      };
-      setJobListings([...jobListings, newJob]);
-      toast.success(`Job "${data.title}" has been created.`);
+      addJobMutation.mutate(data);
     }
-    setIsFormOpen(false);
-    setSelectedJob(null);
   };
+  
+  const isSaving = addJobMutation.isPending || updateJobMutation.isPending;
 
   return (
     <MainLayout>
@@ -113,52 +173,64 @@ const AdminJobManagement = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Job Title</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Applications</TableHead>
-                  <TableHead>Posted Date</TableHead>
-                  <TableHead>Deadline</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {jobListings.map((job) => (
-                  <TableRow key={job.id}>
-                    <TableCell className="font-medium">{job.title}</TableCell>
-                    <TableCell>{job.company}</TableCell>
-                    <TableCell>
-                      <Badge className={
-                        job.status === 'Active' ? 'bg-green-100 text-green-800' : 
-                        job.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }>
-                        {job.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{job.applications}</TableCell>
-                    <TableCell>{job.postedDate.toLocaleDateString()}</TableCell>
-                    <TableCell>{job.deadline.toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleEditJob(job)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteJob(job)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            {isLoading && <div className="text-center p-8">Loading jobs...</div>}
+            {error && <div className="text-center p-8 text-destructive">Error: {error.message}</div>}
+            {!isLoading && !error && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Job Title</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Applications</TableHead>
+                    <TableHead>Posted Date</TableHead>
+                    <TableHead>Deadline</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {jobListings && jobListings.length > 0 ? (
+                    jobListings.map((job) => (
+                      <TableRow key={job.id}>
+                        <TableCell className="font-medium">{job.title}</TableCell>
+                        <TableCell>{job.company}</TableCell>
+                        <TableCell>
+                          <Badge className={
+                            job.status === 'Active' ? 'bg-green-100 text-green-800' : 
+                            job.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }>
+                            {job.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{job.applications}</TableCell>
+                        <TableCell>{job.postedDate.toDate().toLocaleDateString()}</TableCell>
+                        <TableCell>{job.deadline.toDate().toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleEditJob(job)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="destructive" size="sm" onClick={() => handleDeleteJob(job)} disabled={deleteJobMutation.isPending && jobToDelete?.id === job.id}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center h-24">
+                        No job listings found. Start by adding a new one.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -168,6 +240,7 @@ const AdminJobManagement = () => {
         onOpenChange={setIsFormOpen}
         job={selectedJob}
         onSave={handleSaveJob}
+        isSaving={isSaving}
       />
       
       <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
@@ -180,8 +253,8 @@ const AdminJobManagement = () => {
               </AlertDialogHeader>
               <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Delete
+                  <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={deleteJobMutation.isPending}>
+                      {deleteJobMutation.isPending ? "Deleting..." : "Delete"}
                   </AlertDialogAction>
               </AlertDialogFooter>
           </AlertDialogContent>
@@ -191,4 +264,3 @@ const AdminJobManagement = () => {
 };
 
 export default AdminJobManagement;
-

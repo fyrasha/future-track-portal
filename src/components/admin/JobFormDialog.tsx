@@ -33,6 +33,7 @@ import * as z from "zod";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { Job as JobFromDB, JobFormValues } from "@/types/job";
 
 const jobSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters."),
@@ -41,16 +42,15 @@ const jobSchema = z.object({
   deadline: z.date({ required_error: "A deadline date is required." }),
 });
 
-type JobFormValues = z.infer<typeof jobSchema>;
-
 interface JobFormDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  job: JobFormValues & { id: number } | null;
+  job: JobFromDB | null;
   onSave: (data: JobFormValues) => void;
+  isSaving?: boolean;
 }
 
-const JobFormDialog = ({ isOpen, onOpenChange, job, onSave }: JobFormDialogProps) => {
+const JobFormDialog = ({ isOpen, onOpenChange, job, onSave, isSaving }: JobFormDialogProps) => {
   const form = useForm<JobFormValues>({
     resolver: zodResolver(jobSchema),
     defaultValues: {
@@ -65,8 +65,10 @@ const JobFormDialog = ({ isOpen, onOpenChange, job, onSave }: JobFormDialogProps
     if (isOpen) {
       if (job) {
         form.reset({
-          ...job,
-          deadline: new Date(job.deadline),
+          title: job.title,
+          company: job.company,
+          status: job.status,
+          deadline: job.deadline.toDate(), // Convert Firestore Timestamp to JS Date
         });
       } else {
         form.reset({
@@ -183,8 +185,10 @@ const JobFormDialog = ({ isOpen, onOpenChange, job, onSave }: JobFormDialogProps
               )}
             />
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button type="submit">Save changes</Button>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>Cancel</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save changes"}
+              </Button>
             </DialogFooter>
           </form>
         </Form>
@@ -194,4 +198,3 @@ const JobFormDialog = ({ isOpen, onOpenChange, job, onSave }: JobFormDialogProps
 };
 
 export default JobFormDialog;
-

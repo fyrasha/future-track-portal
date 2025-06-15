@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -30,9 +31,11 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    console.log("Login attempt with:", formData.email);
     
     try {
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      console.log("Login successful for user:", userCredential.user.uid);
       const user = userCredential.user;
 
       const userDocRef = doc(db, "users", user.uid);
@@ -61,6 +64,7 @@ const Login = () => {
       navigate("/dashboard");
 
     } catch (error: any) {
+      console.error("Login error:", error);
       let errorMessage = "Invalid email or password. Please try again.";
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         errorMessage = "Invalid email or password. Please try again.";

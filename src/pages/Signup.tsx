@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,9 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import MainLayout from "@/components/MainLayout";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 
 const Signup = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -36,9 +39,8 @@ const Signup = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
     // Simple validation
     if (formData.password !== formData.confirmPassword) {
@@ -47,7 +49,6 @@ const Signup = () => {
         description: "Please make sure both passwords match.",
         variant: "destructive",
       });
-      setIsSubmitting(false);
       return;
     }
     
@@ -57,7 +58,6 @@ const Signup = () => {
         description: "Password must be at least 8 characters long.",
         variant: "destructive",
       });
-      setIsSubmitting(false);
       return;
     }
 
@@ -67,18 +67,58 @@ const Signup = () => {
         description: "Please select your current study year.",
         variant: "destructive",
       });
-      setIsSubmitting(false);
       return;
     }
 
-    // Simulate API call
-    setTimeout(() => {
+    setIsSubmitting(true);
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+      const user = userCredential.user;
+
+      // Store additional user info in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        currentStudyYear: formData.currentStudyYear,
+        role: 'student',
+      });
+      
+      localStorage.setItem('userLoggedIn', 'true');
+      localStorage.setItem('userRole', 'student');
+      localStorage.setItem('userId', user.uid);
+      localStorage.setItem('userName', formData.firstName);
+      window.dispatchEvent(new Event("storage"));
+
       toast({
         title: "Account created successfully!",
-        description: "Please check your email to verify your account.",
+        description: "Redirecting you to the dashboard.",
       });
+      
+      navigate("/dashboard");
+
+    } catch (error: any) {
+      const errorCode = error.code;
+      let errorMessage = "Failed to create account. Please try again.";
+      if (errorCode === 'auth/email-already-in-use') {
+        errorMessage = "This email address is already in use by another account.";
+      } else if (errorCode === 'auth/weak-password') {
+        errorMessage = "The password is too weak. Please use a stronger password.";
+      }
+      
+      toast({
+        title: "Signup Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 1500);
+    }
   };
 
   return (

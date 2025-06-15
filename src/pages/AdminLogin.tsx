@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/components/ui/use-toast";
 import MainLayout from "@/components/MainLayout";
 import { Shield } from "lucide-react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 const AdminLogin = () => {
   const { toast } = useToast();
@@ -26,24 +28,47 @@ const AdminLogin = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      // Set admin login state in localStorage
-      localStorage.setItem('userLoggedIn', 'true');
-      localStorage.setItem('userRole', 'admin');
-      
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
+
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists() && userDoc.data().role === 'admin') {
+        localStorage.setItem('userLoggedIn', 'true');
+        localStorage.setItem('userRole', 'admin');
+        localStorage.setItem('userId', user.uid);
+        localStorage.setItem('userName', userDoc.data().firstName || 'Admin');
+        window.dispatchEvent(new Event("storage"));
+        
+        toast({
+          title: "Admin login successful!",
+          description: "Redirecting to admin dashboard...",
+        });
+        
+        navigate("/admin/dashboard");
+      } else {
+        await auth.signOut();
+        throw new Error("Not an admin account");
+      }
+    } catch (error: any) {
+      let errorMessage = "Authentication failed. Please check your credentials.";
+      if (error.message === "Not an admin account") {
+        errorMessage = "You do not have administrative privileges."
+      }
       toast({
-        title: "Admin login successful!",
-        description: "Redirecting to admin dashboard...",
+        title: "Login Failed",
+        description: errorMessage,
+        variant: "destructive",
       });
+    } finally {
       setIsSubmitting(false);
-      // Redirect to admin dashboard
-      navigate("/admin/dashboard");
-    }, 1500);
+    }
   };
 
   return (

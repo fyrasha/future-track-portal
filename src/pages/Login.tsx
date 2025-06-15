@@ -31,9 +31,14 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    console.log("Login attempt with:", formData.email);
     
     try {
+      // Temporarily forcing an error to test the catch block
+      console.log("Forcing an error to test the catch block.");
+      throw new Error("This is a test error to check the error handling.");
+
+      // The original code is commented out below for this test
+      /*
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       console.log("Login successful for user:", userCredential.user.uid);
       const user = userCredential.user;
@@ -62,17 +67,15 @@ const Login = () => {
       });
       
       navigate("/dashboard");
+      */
 
     } catch (error: any) {
-      console.error("Login error:", error);
-      let errorMessage = "Invalid email or password. Please try again.";
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        errorMessage = "Invalid email or password. Please try again.";
-      }
+      console.error("Login error (test):", error);
       toast({
-        title: "Login Failed",
-        description: errorMessage,
-        variant: "destructive"
+        title: "Test Successful",
+        description: "The error handling is working correctly. We can now investigate the login logic.",
+        variant: "default",
+        duration: 5000,
       });
     } finally {
       setIsSubmitting(false);

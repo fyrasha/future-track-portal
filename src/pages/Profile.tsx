@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,31 +5,35 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, MapPin, GraduationCap, Briefcase, Edit, Save, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Phone, MapPin, GraduationCap, Briefcase, Edit, Save, Eye, EyeOff, X } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Profile = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
 
   // Profile data state
   const [profileData, setProfileData] = useState({
-    fullName: "John Doe",
-    email: "john.doe@student.um.edu.my",
-    phone: "+60 12-345 6789",
-    location: "Kuala Lumpur, Malaysia",
-    university: "University of Malaya",
-    degree: "Bachelor of Computer Science",
-    year: "Final Year",
+    fullName: "",
+    email: "",
+    phone: "",
+    location: "",
+    university: "",
+    degree: "",
     currentStudyYear: "final",
-    gpa: "3.85",
-    skills: "JavaScript, React, Python, Node.js, SQL",
-    bio: "Passionate computer science student with experience in web development and data analysis."
+    gpa: "",
+    skills: "",
+    bio: "",
   });
 
   // Password change state
@@ -44,8 +47,10 @@ const Profile = () => {
     const checkAuth = () => {
       const loggedIn = localStorage.getItem('userLoggedIn') === 'true';
       const role = localStorage.getItem('userRole');
+      const id = localStorage.getItem('userId');
       setIsLoggedIn(loggedIn);
       setUserRole(role);
+      setUserId(id);
     };
 
     checkAuth();
@@ -56,13 +61,79 @@ const Profile = () => {
     };
   }, []);
 
-  const handleProfileUpdate = () => {
-    // In a real app, this would make an API call
-    setIsEditing(false);
-    toast({
-      title: "Profile Updated",
-      description: "Your profile has been successfully updated.",
-    });
+  useEffect(() => {
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchProfileData = async () => {
+      setIsLoading(true);
+      try {
+        const userDocRef = doc(db, "users", userId);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setProfileData({
+            fullName: userData.firstName || "",
+            email: userData.email || "",
+            phone: userData.phone || "",
+            location: userData.location || "",
+            university: userData.university || "",
+            degree: userData.degree || "",
+            currentStudyYear: userData.currentStudyYear || "final",
+            gpa: userData.gpa || "",
+            skills: userData.skills || "",
+            bio: userData.bio || "",
+          });
+        } else {
+          console.error("No such document!");
+          toast({
+            title: "Profile not found",
+            description: "We couldn't find your profile details.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching profile data: ", error);
+        toast({
+          title: "Error",
+          description: "There was a problem fetching your profile.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfileData();
+  }, [userId, toast]);
+
+  const handleProfileUpdate = async () => {
+    if (!userId) return;
+
+    try {
+      const userDocRef = doc(db, "users", userId);
+      const { fullName, ...dataToUpdate } = profileData;
+      await updateDoc(userDocRef, {
+        firstName: fullName,
+        ...dataToUpdate,
+      });
+
+      setIsEditing(false);
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated.",
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({
+        title: "Update Failed",
+        description: "Your profile could not be updated. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePasswordChange = () => {
@@ -113,6 +184,48 @@ const Profile = () => {
     );
   }
 
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto py-8 px-4">
+          <div className="mb-8">
+            <Skeleton className="h-9 w-1/4" />
+            <Skeleton className="h-4 w-1/3 mt-2" />
+          </div>
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-72 mt-2" />
+                </div>
+                <Skeleton className="h-10 w-32" />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div className="space-y-2" key={i}>
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-24 w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="container mx-auto py-8 px-4">
@@ -140,8 +253,8 @@ const Profile = () => {
                     variant="outline"
                     className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10"
                   >
-                    {isEditing ? <Save className="mr-2 h-4 w-4" /> : <Edit className="mr-2 h-4 w-4" />}
-                    {isEditing ? "Cancel" : "Edit Profile"}
+                    {isEditing ? <X className="mr-2 h-4 w-4" /> : <Edit className="mr-2 h-4 w-4" />}
+                    {isEditing ? "Cancel Edit" : "Edit Profile"}
                   </Button>
                 </div>
               </CardHeader>

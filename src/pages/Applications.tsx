@@ -28,7 +28,7 @@ import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
-import ApplicationDetailsDialog from "@/components/ApplicationDetailsDialog";
+import ApplicationDetailsDialog from "../components/ApplicationDetailsDialog";
 
 interface Application {
   id: string;

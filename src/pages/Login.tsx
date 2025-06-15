@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -31,16 +30,13 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    console.log("Attempting to sign in with email:", formData.email);
     
     try {
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      console.log("Firebase auth successful for user:", userCredential.user.uid);
       const user = userCredential.user;
 
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
-      console.log("Firestore user document exists:", userDoc.exists());
 
       let userRole = 'student';
       let userName = '';
@@ -49,9 +45,6 @@ const Login = () => {
         const userData = userDoc.data();
         userRole = userData.role || 'student';
         userName = userData.firstName || '';
-        console.log(`User role: ${userRole}, User name: ${userName}`);
-      } else {
-        console.log("No user document found in Firestore, defaulting to student role.");
       }
       
       localStorage.setItem('userLoggedIn', 'true');
@@ -65,7 +58,6 @@ const Login = () => {
         description: "Redirecting to your dashboard...",
       });
       
-      console.log("Navigating to /dashboard");
       navigate("/dashboard");
 
     } catch (error: any) {

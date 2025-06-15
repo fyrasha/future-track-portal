@@ -26,7 +26,7 @@ import MainLayout from "@/components/MainLayout";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Application {
@@ -62,9 +62,14 @@ const Applications = () => {
     queryKey: ['applications', userId],
     queryFn: async () => {
       if (!userId) return [];
-      const q = query(collection(db, "applications"), where("studentId", "==", userId), orderBy("appliedAt", "desc"));
+      // Query without ordering to avoid needing a composite index in Firestore.
+      // Sorting is done on the client-side after fetching.
+      const q = query(collection(db, "applications"), where("studentId", "==", userId));
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Application));
+      const appData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Application));
+      
+      // Sort applications by date, newest first.
+      return appData.sort((a, b) => b.appliedAt.toMillis() - a.appliedAt.toMillis());
     },
     enabled: !!userId,
   });

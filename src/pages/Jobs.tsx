@@ -52,10 +52,10 @@ const Jobs = () => {
   });
 
   const { data: jobListings, isLoading, error } = useQuery<Job[]>({
-    queryKey: ['jobs', 'active'],
+    queryKey: ['jobs', 'visible'],
     queryFn: async () => {
       const jobsCollection = collection(db, "jobs");
-      const q = query(jobsCollection, where("status", "==", "Active"), orderBy("postedDate", "desc"));
+      const q = query(jobsCollection, where("status", "in", ["Active", "Pending"]), orderBy("postedDate", "desc"));
       const jobSnapshot = await getDocs(q);
       return jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
     },
@@ -166,11 +166,19 @@ const Jobs = () => {
                         <span className="text-unisphere-blue">{job.company}</span>
                       </CardDescription>
                     </div>
-                    {job.type && (
-                      <span className="bg-unisphere-lightBlue/20 text-unisphere-darkBlue px-3 py-1 rounded-full text-sm font-medium">
-                        {job.type}
-                      </span>
-                    )}
+                    <div className="flex flex-col items-end gap-2">
+                      {job.type && (
+                        <Badge variant="outline" className="text-unisphere-darkBlue">
+                          {job.type}
+                        </Badge>
+                      )}
+                      {job.status === 'Pending' && (
+                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                          <Clock className="mr-1 h-3 w-3" />
+                          Pending
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -195,10 +203,11 @@ const Jobs = () => {
                       View Details
                     </Button>
                     <Button 
-                      className="bg-blue-500 hover:bg-blue-600 text-white"
+                      className="bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-400"
                       onClick={() => applyForJob(job)}
+                      disabled={job.status !== 'Active'}
                     >
-                      {isLoggedIn ? "Apply Now" : "Login to Apply"}
+                      {job.status !== 'Active' ? 'Pending Approval' : (isLoggedIn ? "Apply Now" : "Login to Apply")}
                     </Button>
                   </div>
                 </CardFooter>

@@ -1,10 +1,10 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { MessageCircle, X, Send } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -162,36 +162,38 @@ const Chatbot = () => {
                 </div>
               )}
               {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
-                  >
+              <ScrollArea className="flex-1">
+                <div className="p-4 space-y-3">
+                  {messages.map((message) => (
                     <div
-                      className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
-                        message.isBot
-                          ? 'bg-gray-100 text-gray-800'
-                          : 'bg-unisphere-blue text-white'
-                      }`}
+                      key={message.id}
+                      className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
                     >
-                      {message.text}
-                    </div>
-                  </div>
-                ))}
-                {isTyping && (
-                  <div className="flex justify-start">
-                    <div className="bg-gray-100 text-gray-800 rounded-lg px-3 py-2 text-sm">
-                      <div className="flex items-center space-x-1">
-                        <span className="h-2 w-2 bg-gray-400 rounded-full animate-pulse [animation-delay:-0.3s]"></span>
-                        <span className="h-2 w-2 bg-gray-400 rounded-full animate-pulse [animation-delay:-0.15s]"></span>
-                        <span className="h-2 w-2 bg-gray-400 rounded-full animate-pulse"></span>
+                      <div
+                        className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
+                          message.isBot
+                            ? 'bg-gray-100 text-gray-800'
+                            : 'bg-unisphere-blue text-white'
+                        }`}
+                      >
+                        {message.text}
                       </div>
                     </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
+                  ))}
+                  {isTyping && (
+                    <div className="flex justify-start">
+                      <div className="bg-gray-100 text-gray-800 rounded-lg px-3 py-2 text-sm">
+                        <div className="flex items-center space-x-1">
+                          <span className="h-2 w-2 bg-gray-400 rounded-full animate-pulse [animation-delay:-0.3s]"></span>
+                          <span className="h-2 w-2 bg-gray-400 rounded-full animate-pulse [animation-delay:-0.15s]"></span>
+                          <span className="h-2 w-2 bg-gray-400 rounded-full animate-pulse"></span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
 
               {/* Input Area */}
               <div className="border-t p-4">

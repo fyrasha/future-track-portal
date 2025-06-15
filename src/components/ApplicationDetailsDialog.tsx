@@ -50,32 +50,12 @@ const ApplicationDetailsDialog = ({
   const [status, setStatus] = useState("");
   const [nextSteps, setNextSteps] = useState("");
 
-<<<<<<< HEAD
   useEffect(() => {
     if (application) {
       setStatus(application.status);
       setNextSteps(application.nextSteps || "");
     }
   }, [application]);
-=======
-  const applyMutation = useMutation({
-    mutationFn: async (applicationData: { name: string, email: string, phone: string, coverLetter: string, resumeName: string, location: string }) => {
-        // 1. Add application to 'applications' collection
-        await addDoc(collection(db, "applications"), {
-            jobId: job.id,
-            jobTitle: job.title,
-            companyName: job.company,
-            location: applicationData.location,
-            studentId: localStorage.getItem('userId') || "temp-student-id", // Using localStorage or placeholder
-            studentName: applicationData.name,
-            studentEmail: applicationData.email,
-            studentPhone: applicationData.phone,
-            coverLetter: applicationData.coverLetter,
-            resumeFile: applicationData.resumeName,
-            status: "Applied",
-            appliedAt: Timestamp.now(),
-        });
->>>>>>> d6ffa7499d5f30e9f8bfb51fc5849c034fd6db1c
 
   const updateMutation = useMutation({
     mutationFn: async (data: { status: string; nextSteps: string }) => {
@@ -191,9 +171,4 @@ const ApplicationDetailsDialog = ({
   );
 };
 
-<<<<<<< HEAD
 export default ApplicationDetailsDialog;
-=======
-export default JobApplicationDialog;
-
->>>>>>> d6ffa7499d5f30e9f8bfb51fc5849c034fd6db1c

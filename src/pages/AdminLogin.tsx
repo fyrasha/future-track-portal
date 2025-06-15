@@ -31,11 +31,9 @@ const AdminLogin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    console.log("Admin login attempt with:", formData.email);
     
     try {
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      console.log("Admin auth successful for:", userCredential.user.uid);
       const user = userCredential.user;
 
       const userDocRef = doc(db, "users", user.uid);

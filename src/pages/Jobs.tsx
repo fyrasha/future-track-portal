@@ -51,16 +51,18 @@ const Jobs = () => {
     return localStorage.getItem('userRole') as 'student' | 'admin' || 'student';
   });
 
+  //for database
   const { data: jobListings, isLoading, error } = useQuery<Job[]>({
     queryKey: ['jobs', 'visible'],
     queryFn: async () => {
       const jobsCollection = collection(db, "jobs");
-      const q = query(jobsCollection, where("status", "in", ["Active", "Pending"]), orderBy("postedDate", "desc"));
+      const q = query(jobsCollection, orderBy("postedDate", "desc"));
       const jobSnapshot = await getDocs(q);
       return jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
     },
   });
   
+  //for filtering jobs
   const filteredJobs = jobListings?.filter(job => {
     const matchesSearch = 
       (job.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
@@ -75,7 +77,7 @@ const Jobs = () => {
   const applyForJob = (job: Job) => {
     if (!isLoggedIn) {
       toast({
-        title: "Login Required",
+        title: "Login Required", //if students havent logged in
         description: "Please login as a student to apply for jobs.",
         variant: "destructive"
       });
@@ -221,8 +223,6 @@ const Jobs = () => {
             </div>
           )}
         </div>
-        
-        {/* Pagination removed as it's not connected to Firestore yet */}
 
         {/* Application Dialog */}
         {selectedJob && (

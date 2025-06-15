@@ -34,8 +34,8 @@ const Index = () => {
             </div>
             <div className="md:w-1/2 flex justify-center">
               <img 
-                src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158" 
-                alt="Student accessing career platform" 
+                src="https://study.umcced.edu.my/diploma/wp-content/uploads/2023/08/DSC05771-2048x1365.jpg" 
+                alt="UM Students" 
                 className="rounded-lg shadow-xl max-w-full md:max-w-md h-auto"
               />
             </div>

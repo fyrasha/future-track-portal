@@ -1,3 +1,4 @@
+
 import MainLayout from '@/components/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,8 +9,16 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { Event } from '@/types/event';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 const Events = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isLoggedIn] = useState(() => localStorage.getItem('userLoggedIn') === 'true');
+  const [userId] = useState(() => localStorage.getItem('userId'));
+
   const { data: events, isLoading, error } = useQuery<Event[]>({
     queryKey: ['events', 'public'],
     queryFn: async () => {

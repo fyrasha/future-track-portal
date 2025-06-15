@@ -46,7 +46,8 @@ import {
   Timestamp,
   query,
   orderBy,
-  where
+  where,
+  serverTimestamp
 } from "firebase/firestore";
 import { Job, JobFormValues } from "@/types/job";
 
@@ -71,14 +72,29 @@ const AdminJobManagement = () => {
   const addJobMutation = useMutation({
     mutationFn: async (newJob: JobFormValues) => {
       const employersCollection = collection(db, "employers");
-      // Assuming company name field is 'name' in 'employers' collection.
-      const q = query(employersCollection, where("name", "==", newJob.company));
+      // The field in 'employers' collection for the company name is 'companyName'.
+      const q = query(employersCollection, where("companyName", "==", newJob.company));
       const companySnapshot = await getDocs(q);
 
+      let companyId: string;
+
       if (companySnapshot.empty) {
-        throw new Error(`Employer "${newJob.company}" not found. Please ensure the employer exists or check for typos.`);
+        // Employer not found, so create a new one.
+        // As it's added by an admin, we can set its status to 'Verified'.
+        console.log(`Employer "${newJob.company}" not found. Creating a new entry.`);
+        const newEmployerRef = await addDoc(collection(db, "employers"), {
+            companyName: newJob.company,
+            // A placeholder email is used as it's not available in the job creation form.
+            // This can be updated later if needed.
+            email: `${newJob.company.toLowerCase().replace(/\s+/g, '.')}@placeholder.unisphere.com`,
+            status: 'Verified',
+            createdAt: serverTimestamp(),
+        });
+        companyId = newEmployerRef.id;
+        toast.info(`New employer "${newJob.company}" was created and verified.`);
+      } else {
+        companyId = companySnapshot.docs[0].id;
       }
-      const companyId = companySnapshot.docs[0].id;
       
       return await addDoc(collection(db, "jobs"), {
         ...newJob,

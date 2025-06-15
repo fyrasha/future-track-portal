@@ -43,22 +43,26 @@ const Events = () => {
       if (!userId) throw new Error("You must be logged in to register.");
       
       const eventRef = doc(db, "events", event.id);
-
-      // Check for existing registration again within transaction for safety
-      const registrationQuery = query(collection(db, "eventRegistrations"), where("eventId", "==", event.id), where("studentId", "==", userId));
+      const registrationId = `${event.id}_${userId}`;
+      const registrationRef = doc(db, "eventRegistrations", registrationId);
 
       await runTransaction(db, async (transaction) => {
         const eventDoc = await transaction.get(eventRef);
-        if (!eventDoc.exists()) throw new Error("Event does not exist!");
-        
-        const existingRegs = await getDocs(registrationQuery);
-        if(!existingRegs.empty) throw new Error("You are already registered for this event.");
+        if (!eventDoc.exists()) {
+          throw new Error("Event does not exist!");
+        }
+
+        const registrationDoc = await transaction.get(registrationRef);
+        if (registrationDoc.exists()) {
+          throw new Error("You are already registered for this event.");
+        }
 
         const eventData = eventDoc.data();
-        if (eventData.participants >= eventData.capacity) throw new Error("This event is already full.");
+        if (eventData.participants >= eventData.capacity) {
+          throw new Error("This event is already full.");
+        }
 
-        const newRegistrationRef = doc(collection(db, "eventRegistrations"));
-        transaction.set(newRegistrationRef, {
+        transaction.set(registrationRef, {
             eventId: event.id,
             studentId: userId,
             eventName: eventData.name,
@@ -72,7 +76,7 @@ const Events = () => {
     onSuccess: () => {
       toast({ title: "Registration Successful", description: "You are now registered for the event." });
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['myRegistrations'] });
+      queryClient.invalidateQueries({ queryKey: ['myRegistrations', userId] });
     },
     onError: (error: Error) => {
       toast({ title: "Registration Failed", description: error.message, variant: "destructive" });

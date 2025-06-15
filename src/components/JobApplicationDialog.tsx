@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,12 +44,13 @@ const JobApplicationDialog = ({
   });
 
   const applyMutation = useMutation({
-    mutationFn: async (applicationData: { name: string, email: string, phone: string, coverLetter: string, resumeName: string }) => {
+    mutationFn: async (applicationData: { name: string, email: string, phone: string, coverLetter: string, resumeName: string, location: string }) => {
         // 1. Add application to 'applications' collection
         await addDoc(collection(db, "applications"), {
             jobId: job.id,
             jobTitle: job.title,
             companyName: job.company,
+            location: applicationData.location,
             studentId: localStorage.getItem('userId') || "temp-student-id", // Using localStorage or placeholder
             studentName: applicationData.name,
             studentEmail: applicationData.email,
@@ -119,6 +119,7 @@ const JobApplicationDialog = ({
       phone: formData.phone,
       coverLetter: formData.coverLetter,
       resumeName: formData.resume.name, // Storing file name for now
+      location: job.location,
     });
   };
 

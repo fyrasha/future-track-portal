@@ -3,13 +3,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, MapPin, Users, Briefcase } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, doc, runTransaction, Timestamp, increment } from 'firebase/firestore';
 import { Event } from '@/types/event';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 const Events = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isLoggedIn] = useState(() => localStorage.getItem('userLoggedIn') === 'true');
+  const [userId] = useState(() => localStorage.getItem('userId'));
+
   const { data: events, isLoading, error } = useQuery<Event[]>({
     queryKey: ['events', 'public'],
     queryFn: async () => {
@@ -19,6 +26,70 @@ const Events = () => {
         return eventSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Event, 'id'>), id: doc.id }));
     }
   });
+
+  const { data: registeredEventIds } = useQuery<string[]>({
+    queryKey: ['myRegistrations', userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      const q = query(collection(db, "eventRegistrations"), where("studentId", "==", userId));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => doc.data().eventId);
+    },
+    enabled: !!userId,
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: async (event: Event) => {
+      if (!userId) throw new Error("You must be logged in to register.");
+      
+      const eventRef = doc(db, "events", event.id);
+
+      // Check for existing registration again within transaction for safety
+      const registrationQuery = query(collection(db, "eventRegistrations"), where("eventId", "==", event.id), where("studentId", "==", userId));
+
+      await runTransaction(db, async (transaction) => {
+        const eventDoc = await transaction.get(eventRef);
+        if (!eventDoc.exists()) throw new Error("Event does not exist!");
+        
+        const existingRegs = await getDocs(registrationQuery);
+        if(!existingRegs.empty) throw new Error("You are already registered for this event.");
+
+        const eventData = eventDoc.data();
+        if (eventData.participants >= eventData.capacity) throw new Error("This event is already full.");
+
+        const newRegistrationRef = doc(collection(db, "eventRegistrations"));
+        transaction.set(newRegistrationRef, {
+            eventId: event.id,
+            studentId: userId,
+            eventName: eventData.name,
+            eventDate: eventData.date,
+            registeredAt: Timestamp.now(),
+        });
+        
+        transaction.update(eventRef, { participants: increment(1) });
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Registration Successful", description: "You are now registered for the event." });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['myRegistrations'] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Registration Failed", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleRegister = (event: Event) => {
+    if (!isLoggedIn) {
+      toast({ title: "Login Required", description: "Please log in to register for events.", variant: "destructive" });
+      return;
+    }
+    if(registeredEventIds?.includes(event.id)) {
+        toast({ title: "Already Registered", description: "You have already registered for this event." });
+        return;
+    }
+    registerMutation.mutate(event);
+  };
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -72,7 +143,12 @@ const Events = () => {
         )
     }
 
-    return events.map((event) => (
+    return events.map((event) => {
+      const isFull = event.participants >= event.capacity;
+      const isRegistered = registeredEventIds?.includes(event.id) ?? false;
+      const isRegistering = registerMutation.isPending && registerMutation.variables?.id === event.id;
+
+      return (
         <Card key={event.id} className="hover:shadow-lg transition-shadow">
           <CardHeader>
             <div className="flex justify-between items-start mb-2">
@@ -80,7 +156,7 @@ const Events = () => {
                 <span className="capitalize">{event.type}</span>
               </Badge>
               <span className={`text-sm font-medium ${getAvailabilityColor(event.participants, event.capacity)}`}>
-                {event.capacity - event.participants} spots left
+                {isFull ? 'Full' : `${event.capacity - event.participants} spots left`}
               </span>
             </div>
             <CardTitle className="text-xl">{event.name}</CardTitle>
@@ -111,9 +187,10 @@ const Events = () => {
               <Button 
                 variant="default"
                 className="flex-1"
-                disabled={event.participants >= event.capacity}
+                disabled={isFull || isRegistered || isRegistering}
+                onClick={() => handleRegister(event)}
               >
-                {event.participants >= event.capacity ? 'Full' : 'Register'}
+                {isRegistering ? 'Registering...' : (isRegistered ? 'Registered' : (isFull ? 'Full' : 'Register'))}
               </Button>
               <Button variant="outline" size="sm">
                 Details
@@ -121,7 +198,8 @@ const Events = () => {
             </div>
           </CardContent>
         </Card>
-      ));
+      )
+    });
   }
 
   return (

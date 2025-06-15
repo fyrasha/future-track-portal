@@ -1,4 +1,3 @@
-
 import MainLayout from '@/components/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -84,7 +83,7 @@ const Events = () => {
                 {event.capacity - event.participants} spots left
               </span>
             </div>
-            <CardTitle className="text-xl">{event.title}</CardTitle>
+            <CardTitle className="text-xl">{event.name}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-gray-600 mb-4">{event.description}</p>

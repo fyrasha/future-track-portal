@@ -69,11 +69,25 @@ const CompanyDetails = () => {
     queryKey: ['company-jobs', id],
     queryFn: async () => {
       if (!id) return [];
+      console.log('Fetching jobs for company ID:', id);
+      
       const jobsCollection = collection(db, "jobs");
-      // Only show Active jobs for the company
-      const q = query(jobsCollection, where("companyId", "==", id), where("status", "==", "Active"));
+      // Fetch all Active jobs for this company
+      const q = query(
+        jobsCollection, 
+        where("companyId", "==", id), 
+        where("status", "==", "Active"),
+        orderBy("postedDate", "desc")
+      );
+      
       const jobSnapshot = await getDocs(q);
-      return jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
+      const jobs = jobSnapshot.docs.map(doc => ({ 
+        ...(doc.data() as Omit<Job, 'id'>), 
+        id: doc.id 
+      }));
+      
+      console.log(`Found ${jobs.length} jobs for company ${id}:`, jobs);
+      return jobs;
     },
     enabled: !!id,
   });
@@ -264,11 +278,24 @@ const CompanyDetails = () => {
                             <h5 className="font-medium text-gray-900">{position.title}</h5>
                             <div className="flex items-center mt-1 space-x-4">
                               <Badge variant="outline">{position.type}</Badge>
-                              <span className="text-sm text-gray-500">Posted: {position.postedDate.toDate().toLocaleDateString()}</span>
+                              {position.location && (
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <MapPin className="h-3 w-3 mr-1" />
+                                  {position.location}
+                                </div>
+                              )}
+                              <span className="text-sm text-gray-500">
+                                Posted: {position.postedDate.toDate().toLocaleDateString()}
+                              </span>
                             </div>
+                            {position.description && (
+                              <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                                {position.description}
+                              </p>
+                            )}
                           </div>
-                          <Link to={`/jobs`}>
-                            <Button size="sm" className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white">
+                          <Link to={`/jobs#${position.id}`}>
+                            <Button size="sm" className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white ml-4">
                               View Job
                             </Button>
                           </Link>

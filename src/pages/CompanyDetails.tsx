@@ -1,4 +1,3 @@
-
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
@@ -47,11 +46,20 @@ const CompanyDetails = () => {
     queryKey: ['company', id],
     queryFn: async () => {
       if (!id) return null;
-      const companyDocRef = doc(db, 'users', id);
-      const companyDocSnap = await getDoc(companyDocRef);
-      if (companyDocSnap.exists() && companyDocSnap.data().role === 'employer') {
-        return { id: companyDocSnap.id, ...companyDocSnap.data() } as Company;
+      // First try to get from employers collection
+      const employerDocRef = doc(db, 'employers', id);
+      const employerDocSnap = await getDoc(employerDocRef);
+      if (employerDocSnap.exists()) {
+        return { id: employerDocSnap.id, ...employerDocSnap.data() } as Company;
       }
+      
+      // Fallback: try users collection for backwards compatibility
+      const userDocRef = doc(db, 'users', id);
+      const userDocSnap = await getDoc(userDocRef);
+      if (userDocSnap.exists() && userDocSnap.data().role === 'employer') {
+        return { id: userDocSnap.id, ...userDocSnap.data() } as Company;
+      }
+      
       return null;
     },
     enabled: !!id,

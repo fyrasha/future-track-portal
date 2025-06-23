@@ -1,8 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, updateDoc, Timestamp, query, orderBy, addDoc, serverTimestamp, where } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, Timestamp, query, orderBy } from "firebase/firestore";
 import { useToast } from "@/components/ui/use-toast";
 import MainLayout from "@/components/MainLayout";
+import EmployerDetailsDialog from "@/components/EmployerDetailsDialog";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -40,6 +42,8 @@ interface Employer {
 const AdminEmployerReview = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [selectedEmployer, setSelectedEmployer] = useState<Employer | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: employers, isLoading, error } = useQuery<Employer[], Error>({
     queryKey: ['employers'],
@@ -101,6 +105,11 @@ const AdminEmployerReview = () => {
 
   const handleUpdateStatus = (employerId: string, status: 'Verified' | 'Rejected') => {
     updateEmployerStatus.mutate({ employerId, status });
+  };
+
+  const handleViewDetails = (employer: Employer) => {
+    setSelectedEmployer(employer);
+    setDialogOpen(true);
   };
 
   const getStatusBadge = (status: Employer['status']) => {
@@ -196,7 +205,7 @@ const AdminEmployerReview = () => {
                               </Button>
                             </>
                           )}
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => handleViewDetails(employer)}>
                             <Eye className="h-4 w-4" />
                           </Button>
                         </div>
@@ -216,6 +225,13 @@ const AdminEmployerReview = () => {
             </Table>
           </CardContent>
         </Card>
+
+        <EmployerDetailsDialog
+          employer={selectedEmployer}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onUpdateStatus={handleUpdateStatus}
+        />
       </div>
     </MainLayout>
   );

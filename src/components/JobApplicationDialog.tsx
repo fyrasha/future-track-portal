@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,55 +8,41 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Building, MapPin } from "lucide-react";
+import { Building, Briefcase, MapPin } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
-import { doc, updateDoc, Timestamp } from "firebase/firestore";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { addDoc, collection, doc, updateDoc, increment, Timestamp } from "firebase/firestore";
 
-interface Application {
-  id: string;
-  jobTitle: string;
-  companyName: string;
-  location?: string;
-  appliedAt: Timestamp;
-  status: string;
-  nextSteps?: string;
-}
-
-interface ApplicationDetailsDialogProps {
-  application: Application | null;
+interface JobApplicationDialogProps {
+  job: {
+    id: string; // Changed from number
+    title: string;
+    company: string;
+    location: string;
+  };
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const ApplicationDetailsDialog = ({
-  application,
+const JobApplicationDialog = ({
+  job,
   open,
   onOpenChange,
-}: ApplicationDetailsDialogProps) => {
+}: JobApplicationDialogProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState("");
-  const [nextSteps, setNextSteps] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    coverLetter: "",
+    resume: null as File | null,
+  });
 
-<<<<<<< HEAD
-  useEffect(() => {
-    if (application) {
-      setStatus(application.status);
-      setNextSteps(application.nextSteps || "");
-    }
-  }, [application]);
-=======
   const applyMutation = useMutation({
     mutationFn: async (applicationData: { name: string, email: string, phone: string, coverLetter: string, resumeName: string, location: string }) => {
         // 1. Add application to 'applications' collection
@@ -75,95 +60,166 @@ const ApplicationDetailsDialog = ({
             status: "Applied",
             appliedAt: Timestamp.now(),
         });
->>>>>>> d6ffa7499d5f30e9f8bfb51fc5849c034fd6db1c
 
-  const updateMutation = useMutation({
-    mutationFn: async (data: { status: string; nextSteps: string }) => {
-      if (!application) throw new Error("No application selected");
-      const appRef = doc(db, "applications", application.id);
-      await updateDoc(appRef, {
-        status: data.status,
-        nextSteps: data.nextSteps,
-      });
+        // 2. Increment application count on the job document
+        const jobRef = doc(db, "jobs", job.id);
+        await updateDoc(jobRef, {
+            applications: increment(1)
+        });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["applications", localStorage.getItem('userId')] });
-      toast({
-        title: "Application Updated",
-        description: "Your application details have been saved.",
-      });
-      onOpenChange(false);
+        queryClient.invalidateQueries({ queryKey: ['jobs'] });
+        
+        toast({
+            title: "Application Submitted",
+            description: "Your application has been successfully submitted.",
+        });
+        
+        onOpenChange(false); // Close dialog on success
     },
     onError: (error: Error) => {
-      toast({
-        title: "Update Failed",
-        description: error.message || "Could not update application. Please try again.",
-        variant: "destructive",
-      });
+        toast({
+            title: "Submission Failed",
+            description: error.message || "Could not submit your application. Please try again.",
+            variant: "destructive",
+        });
     },
+    onSettled: () => {
+      // Reset form after submission attempt
+      setFormData({ name: "", email: "", phone: "", coverLetter: "", resume: null });
+    }
   });
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFormData((prev) => ({ ...prev, resume: e.target.files![0] }));
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateMutation.mutate({ status, nextSteps });
+    if (!formData.resume) {
+      toast({
+        title: "Resume is required",
+        description: "Please upload your resume before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+    applyMutation.mutate({
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      coverLetter: formData.coverLetter,
+      resumeName: formData.resume.name, // Storing file name for now
+      location: job.location,
+    });
   };
-
-  if (!application) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle className="text-xl">Application Details</DialogTitle>
+          <DialogTitle className="text-xl">Apply for Position</DialogTitle>
           <DialogDescription>
-            Update the status and next steps for your application.
+            Complete the form below to apply for this job opportunity.
           </DialogDescription>
         </DialogHeader>
 
         <div className="bg-gray-50 rounded-md p-4 mb-4">
           <h3 className="font-semibold text-unisphere-darkBlue mb-2 text-lg">
-            {application.jobTitle}
+            {job.title}
           </h3>
           <div className="flex items-center text-gray-600 mb-1">
             <Building className="h-4 w-4 mr-2" />
-            {application.companyName}
+            {job.company}
           </div>
           <div className="flex items-center text-gray-600">
             <MapPin className="h-4 w-4 mr-2" />
-            {application.location || 'N/A'}
+            {job.location}
           </div>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
-                Status
+              <Label htmlFor="name" className="text-right">
+                Full Name
               </Label>
-              <Select onValueChange={setStatus} value={status}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select a status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Applied">Applied</SelectItem>
-                  <SelectItem value="Under Review">Under Review</SelectItem>
-                  <SelectItem value="Interview Scheduled">Interview Scheduled</SelectItem>
-                  <SelectItem value="Rejected">Rejected</SelectItem>
-                  <SelectItem value="Offer Received">Offer Received</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">
+                Email
+              </Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phone" className="text-right">
+                Phone
+              </Label>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="nextSteps" className="text-right pt-2">
-                Next Steps
+              <Label htmlFor="resume" className="text-right pt-2">
+                Resume
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="resume"
+                  name="resume"
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleFileChange}
+                  required
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  PDF, DOC, or DOCX format (max 5MB)
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="coverLetter" className="text-right pt-2">
+                Cover Letter
               </Label>
               <Textarea
-                id="nextSteps"
-                value={nextSteps}
-                onChange={(e) => setNextSteps(e.target.value)}
-                placeholder="e.g., Technical interview on June 20th at 10 AM"
+                id="coverLetter"
+                name="coverLetter"
+                value={formData.coverLetter}
+                onChange={handleChange}
+                placeholder="Tell us why you're interested in this position..."
                 className="col-span-3"
-                rows={3}
+                rows={5}
               />
             </div>
           </div>
@@ -173,16 +229,16 @@ const ApplicationDetailsDialog = ({
               variant="outline"
               onClick={() => onOpenChange(false)}
               className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10"
-              disabled={updateMutation.isPending}
+              disabled={applyMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               type="submit"
               className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white"
-              disabled={updateMutation.isPending}
+              disabled={applyMutation.isPending}
             >
-              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              {applyMutation.isPending ? "Submitting..." : "Submit Application"}
             </Button>
           </DialogFooter>
         </form>
@@ -191,9 +247,4 @@ const ApplicationDetailsDialog = ({
   );
 };
 
-<<<<<<< HEAD
-export default ApplicationDetailsDialog;
-=======
 export default JobApplicationDialog;
-
->>>>>>> d6ffa7499d5f30e9f8bfb51fc5849c034fd6db1c

@@ -31,8 +31,8 @@ import { useToast } from "@/hooks/use-toast";
 import JobApplicationDialog from "@/components/JobApplicationDialog";
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
-import { Job } from "@/types/job";
+import { collection, getDocs, query, where, orderBy, documentId } from "firebase/firestore";
+import { Job, JobWithCompanyStatus } from "@/types/job";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
@@ -40,7 +40,7 @@ const Jobs = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [jobType, setJobType] = useState("all");
   const { toast } = useToast();
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [selectedJob, setSelectedJob] = useState<JobWithCompanyStatus | null>(null);
   const [applicationDialogOpen, setApplicationDialogOpen] = useState(false);
   
   const [isLoggedIn] = useState(() => {
@@ -51,18 +51,44 @@ const Jobs = () => {
     return localStorage.getItem('userRole') as 'student' | 'admin' || 'student';
   });
 
-  //for database
-  const { data: jobListings, isLoading, error } = useQuery<Job[]>({
-    queryKey: ['jobs', 'visible'],
+  const { data: jobListings, isLoading, error } = useQuery<JobWithCompanyStatus[]>({
+    queryKey: ['jobs', 'visible', userRole, 'withCompanyStatus'],
     queryFn: async () => {
       const jobsCollection = collection(db, "jobs");
-      const q = query(jobsCollection, orderBy("postedDate", "desc"));
-      const jobSnapshot = await getDocs(q);
-      return jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
+      
+      let statusesToShow: ('Active' | 'Pending')[] = ['Active'];
+      if (userRole === 'admin') {
+        statusesToShow.push('Pending');
+      }
+
+      const jobsQuery = query(jobsCollection, where("status", "in", statusesToShow));
+      
+      const jobSnapshot = await getDocs(jobsQuery);
+      const jobs: Job[] = jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
+
+      if (jobs.length === 0) {
+        return [];
+      }
+
+      const companyIds = [...new Set(jobs.map(job => job.companyId).filter(Boolean))];
+
+      const employersMap = new Map<string, 'Verified' | 'Pending' | 'Rejected'>();
+      if (companyIds.length > 0) {
+        const employersCollection = collection(db, "employers");
+        const employersQuery = query(employersCollection, where(documentId(), 'in', companyIds));
+        const employerSnapshot = await getDocs(employersQuery);
+        employerSnapshot.forEach(doc => {
+          employersMap.set(doc.id, (doc.data() as { status: 'Verified' | 'Pending' | 'Rejected' }).status);
+        });
+      }
+
+      return jobs.map(job => ({
+        ...job,
+        isCompanyVerified: employersMap.get(job.companyId) === 'Verified',
+      }));
     },
   });
   
-  //for filtering jobs
   const filteredJobs = jobListings?.filter(job => {
     const matchesSearch = 
       (job.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
@@ -74,10 +100,10 @@ const Jobs = () => {
     return matchesSearch && matchesType;
   }) ?? [];
 
-  const applyForJob = (job: Job) => {
+  const applyForJob = (job: JobWithCompanyStatus) => {
     if (!isLoggedIn) {
       toast({
-        title: "Login Required", //if students havent logged in
+        title: "Login Required",
         description: "Please login as a student to apply for jobs.",
         variant: "destructive"
       });
@@ -166,6 +192,12 @@ const Jobs = () => {
                       <CardDescription className="flex items-center mt-1">
                         <Building className="h-4 w-4 mr-1" />
                         <span className="text-unisphere-blue">{job.company}</span>
+                        {job.isCompanyVerified && (
+                          <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-100/80">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Verified
+                          </Badge>
+                        )}
                       </CardDescription>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -184,6 +216,7 @@ const Jobs = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {/* ... keep existing code (job location and description) */}
                   <div className="flex items-center text-gray-500 mb-3">
                     <MapPin className="h-4 w-4 mr-2" />
                     <span>{job.location || 'Not specified'}</span>
@@ -193,17 +226,20 @@ const Jobs = () => {
                   </p>
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row justify-between border-t pt-4">
+                  {/* ... keep existing code (deadline and action buttons) */}
                   <div className="flex items-center text-gray-500 mb-2 sm:mb-0">
                     <Calendar className="h-4 w-4 mr-2" />
                     <span>Deadline: {job.deadline.toDate().toLocaleDateString()}</span>
                   </div>
                   <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      className="border-blue-500 text-blue-500 hover:bg-blue-50"
-                    >
-                      View Details
-                    </Button>
+                    <Link to={`/company/${job.companyId}`}>
+                      <Button 
+                        variant="outline" 
+                        className="border-blue-500 text-blue-500 hover:bg-blue-50"
+                      >
+                        View Details
+                      </Button>
+                    </Link>
                     <Button 
                       className="bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-400"
                       onClick={() => applyForJob(job)}
@@ -223,6 +259,8 @@ const Jobs = () => {
             </div>
           )}
         </div>
+        
+        {/* Pagination removed as it's not connected to Firestore yet */}
 
         {/* Application Dialog */}
         {selectedJob && (

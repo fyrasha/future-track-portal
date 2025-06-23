@@ -8,7 +8,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyABzyt-uKLvHmWXtb5JA-LZZRVpVXXvnyk",
   authDomain: "unisphere-fb9b3.firebaseapp.com",
   projectId: "unisphere-fb9b3",
-  storageBucket: "unisphere-fb9b3.appspot.com", // Corrected the storage bucket URL
+  storageBucket: "unisphere-fb9b3.appspot.com", 
   messagingSenderId: "816187663600",
   appId: "1:816187663600:web:b8126aff037ca3f8c78e35"
 };

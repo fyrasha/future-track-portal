@@ -110,8 +110,8 @@ const EmployerDetailsDialog = ({ employer, open, onOpenChange, onUpdateStatus }:
             </CardContent>
           </Card>
 
-          {employer.status === 'Pending' && (
-            <div className="flex justify-end space-x-3">
+          <div className="flex justify-end space-x-3">
+            {employer.status !== 'Rejected' && (
               <Button
                 variant="outline"
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -123,6 +123,8 @@ const EmployerDetailsDialog = ({ employer, open, onOpenChange, onUpdateStatus }:
                 <XCircle className="h-4 w-4 mr-2" />
                 Reject
               </Button>
+            )}
+            {employer.status !== 'Verified' && (
               <Button
                 className="bg-green-600 hover:bg-green-700"
                 onClick={() => {
@@ -133,8 +135,8 @@ const EmployerDetailsDialog = ({ employer, open, onOpenChange, onUpdateStatus }:
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Approve
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

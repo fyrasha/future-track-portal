@@ -1,178 +1,68 @@
-import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { db } from "@/lib/firebase";
-import { doc, getDoc, collection, query, where, getDocs, Timestamp } from "firebase/firestore";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Building, 
-  MapPin, 
-  Users, 
-  Globe, 
-  Mail, 
-  Phone,
-  Briefcase,
-  Star,
-  ArrowLeft,
-  Calendar
-} from "lucide-react";
-import MainLayout from "@/components/MainLayout";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Job } from "@/types/job";
+import { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { MapPin, Users, Calendar, Briefcase, ExternalLink, Building2 } from 'lucide-react';
+import { collection, doc, getDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Job } from '@/types/job';
+import MainLayout from '@/components/MainLayout';
 
 interface Company {
   id: string;
-  companyName: string;
-  email: string;
-  status: 'Pending' | 'Verified' | 'Rejected';
-  createdAt: Timestamp;
-  description?: string;
-  industry?: string;
-  size?: string;
-  founded?: string;
-  website?: string;
-  phone?: string;
-  location?: string;
-  rating?: number;
-  benefits?: string[];
-  culture?: string;
+  name: string;
+  description: string;
+  industry: string;
+  location: string;
+  employeeCount: number;
+  foundedDate: string;
+  website: string;
+  logoUrl: string;
 }
 
 const CompanyDetails = () => {
   const { id } = useParams<{ id: string }>();
+  const [company, setCompany] = useState<Company | null>(null);
+  const [jobs, setJobs] = useState<Job[]>([]);
 
-  const { data: company, isLoading: isLoadingCompany, error: companyError } = useQuery<Company | null>({
-    queryKey: ['company', id],
-    queryFn: async () => {
-      if (!id) return null;
-      // First try to get from employers collection
-      const employerDocRef = doc(db, 'employers', id);
-      const employerDocSnap = await getDoc(employerDocRef);
-      if (employerDocSnap.exists()) {
-        return { id: employerDocSnap.id, ...employerDocSnap.data() } as Company;
-      }
-      
-      // Fallback: try users collection for backwards compatibility
-      const userDocRef = doc(db, 'users', id);
-      const userDocSnap = await getDoc(userDocRef);
-      if (userDocSnap.exists() && userDocSnap.data().role === 'employer') {
-        return { id: userDocSnap.id, ...userDocSnap.data() } as Company;
-      }
-      
+  useQuery(['company', id], async () => {
+    if (!id) {
       return null;
-    },
-    enabled: !!id,
+    }
+
+    const companyDocRef = doc(db, 'companies', id);
+    const companyDocSnap = await getDoc(companyDocRef);
+
+    if (companyDocSnap.exists()) {
+      const companyData = companyDocSnap.data() as Company;
+      setCompany({ id: companyDocSnap.id, ...companyData });
+    } else {
+      console.log('No such company!');
+      setCompany(null);
+    }
+
+    const jobsQuery = query(collection(db, 'jobs'), where('companyId', '==', id), orderBy('createdAt', 'desc'));
+    const jobsSnapshot = await getDocs(jobsQuery);
+    const jobsList: Job[] = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+    setJobs(jobsList);
+
+    return companyDocSnap.exists() ? companyDocSnap.data() : null;
   });
 
-  const { data: openPositions, isLoading: isLoadingJobs } = useQuery<Job[]>({
-    queryKey: ['company-jobs', id],
-    queryFn: async () => {
-      if (!id) return [];
-      console.log('Fetching jobs for company ID:', id);
-      
-      const jobsCollection = collection(db, "jobs");
-      // Fetch all Active jobs for this company
-      const q = query(
-        jobsCollection, 
-        where("companyId", "==", id), 
-        where("status", "==", "Active"),
-        orderBy("postedDate", "desc")
-      );
-      
-      const jobSnapshot = await getDocs(q);
-      const jobs = jobSnapshot.docs.map(doc => ({ 
-        ...(doc.data() as Omit<Job, 'id'>), 
-        id: doc.id 
-      }));
-      
-      console.log(`Found ${jobs.length} jobs for company ${id}:`, jobs);
-      return jobs;
-    },
-    enabled: !!id,
-  });
-
-  if (isLoadingCompany || isLoadingJobs) {
+  if (!company) {
     return (
       <MainLayout>
-        <div className="container mx-auto py-8 px-4">
-          <Skeleton className="h-10 w-40 mb-6" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-start space-x-4">
-                    <Skeleton className="w-16 h-16 rounded-lg" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-8 w-3/4" />
-                      <Skeleton className="h-5 w-1/2" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-2/3 mb-6" />
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    {[...Array(4)].map((_, i) => (
-                      <div key={i}>
-                        <Skeleton className="h-5 w-20 mb-1" />
-                        <Skeleton className="h-5 w-32" />
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader><Skeleton className="h-7 w-48" /></CardHeader>
-                <CardContent className="space-y-4">
-                  {[...Array(2)].map((_, i) => (
-                    <div key={i} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2">
-                           <Skeleton className="h-5 w-40" />
-                           <Skeleton className="h-4 w-24" />
-                        </div>
-                        <Skeleton className="h-9 w-24 rounded-md" />
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-            <div className="space-y-6">
-              <Card>
-                <CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader>
-                <CardContent className="space-y-4">
-                  <Skeleton className="h-5 w-full" />
-                  <Skeleton className="h-5 w-full" />
-                  <Skeleton className="h-5 w-full" />
-                </CardContent>
-              </Card>
-            </div>
+        <div className="container mx-auto py-12 px-4">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Company Not Found</h2>
+            <p>The company you are looking for does not exist.</p>
+            <Link to="/jobs" className="text-blue-500 hover:underline">
+              Back to Jobs
+            </Link>
           </div>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  if (companyError || !company) {
-    return (
-      <MainLayout>
-        <div className="container mx-auto py-8 px-4">
-          <Card className="max-w-md mx-auto text-center">
-            <CardHeader>
-              <CardTitle>Company Not Found</CardTitle>
-              <CardDescription>The requested company could not be found.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link to="/jobs">
-                <Button className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white">
-                  Back to Jobs
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
         </div>
       </MainLayout>
     );
@@ -180,186 +70,78 @@ const CompanyDetails = () => {
 
   return (
     <MainLayout>
-      <div className="container mx-auto py-8 px-4">
-        <div className="mb-6">
-          <Link to="/jobs">
-            <Button variant="outline" className="mb-4">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Jobs
-            </Button>
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Company Info */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-start space-x-4">
-                  <div className="w-16 h-16 bg-unisphere-blue/10 rounded-lg flex items-center justify-center">
-                    <Building className="h-8 w-8 text-unisphere-blue" />
-                  </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-2xl text-unisphere-darkBlue">{company.companyName}</CardTitle>
-                    <div className="flex items-center mt-2 space-x-4">
-                      {company.location && (
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-1 text-gray-500" />
-                          <span className="text-gray-600">{company.location}</span>
-                        </div>
-                      )}
-                      {company.rating && (
-                        <div className="flex items-center">
-                          <Star className="h-4 w-4 mr-1 text-yellow-500" />
-                          <span className="text-gray-600">{company.rating}/5.0</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {company.description && <p className="text-gray-700 mb-4">{company.description}</p>}
-                
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  {company.industry && <div>
-                    <h4 className="font-medium text-gray-900 mb-1">Industry</h4>
-                    <p className="text-gray-600">{company.industry}</p>
-                  </div>}
-                  {company.size && <div>
-                    <h4 className="font-medium text-gray-900 mb-1">Company Size</h4>
-                    <p className="text-gray-600">{company.size}</p>
-                  </div>}
-                  {company.founded && <div>
-                    <h4 className="font-medium text-gray-900 mb-1">Founded</h4>
-                    <p className="text-gray-600">{company.founded}</p>
-                  </div>}
-                  {company.website && <div>
-                    <h4 className="font-medium text-gray-900 mb-1">Website</h4>
-                    <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-unisphere-blue hover:underline">
-                      Visit Website
-                    </a>
-                  </div>}
-                </div>
-
-                {company.culture && <div className="mb-6">
-                  <h4 className="font-medium text-gray-900 mb-3">Company Culture</h4>
-                  <p className="text-gray-700">{company.culture}</p>
-                </div>}
-
-                {company.benefits && company.benefits.length > 0 && (
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-3">Benefits & Perks</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {company.benefits.map((benefit: string, index: number) => (
-                        <Badge key={index} variant="outline" className="bg-blue-50">
-                          {benefit}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Open Positions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Open Positions</CardTitle>
-                <CardDescription>Current job openings at {company.companyName}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {openPositions && openPositions.length > 0 ? (
-                    openPositions.map((position) => (
-                      <div key={position.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h5 className="font-medium text-gray-900">{position.title}</h5>
-                            <div className="flex items-center mt-1 space-x-4">
-                              <Badge variant="outline">{position.type}</Badge>
-                              {position.location && (
-                                <div className="flex items-center text-sm text-gray-500">
-                                  <MapPin className="h-3 w-3 mr-1" />
-                                  {position.location}
-                                </div>
-                              )}
-                              <span className="text-sm text-gray-500">
-                                Posted: {position.postedDate.toDate().toLocaleDateString()}
-                              </span>
-                            </div>
-                            {position.description && (
-                              <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                                {position.description}
-                              </p>
-                            )}
-                          </div>
-                          <Link to={`/jobs#${position.id}`}>
-                            <Button size="sm" className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white ml-4">
-                              View Job
-                            </Button>
+      <div className="container mx-auto py-12 px-4">
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="space-y-1">
+            <div className="flex justify-center">
+              <img src={company.logoUrl} alt={`${company.name} Logo`} className="h-20 w-20 rounded-full object-cover" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-center">{company.name}</CardTitle>
+            <CardDescription className="text-center">{company.industry}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-6">
+            <div className="grid gap-2">
+              <p className="text-lg font-semibold">About</p>
+              <p className="text-muted-foreground">{company.description}</p>
+            </div>
+            <Separator />
+            <div className="grid gap-2">
+              <p className="text-lg font-semibold">Company Details</p>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <span>{company.location}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span>{company.employeeCount} employees</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span>Founded on {new Date(company.foundedDate).toLocaleDateString()}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                <Link to={company.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                  Visit Website
+                </Link>
+              </div>
+            </div>
+            <Separator />
+            <div className="grid gap-2">
+              <p className="text-lg font-semibold">Open Positions</p>
+              {jobs.length > 0 ? (
+                <div className="grid gap-4">
+                  {jobs.map(job => (
+                    <Card key={job.id} className="border">
+                      <CardHeader>
+                        <CardTitle>
+                          <Link to={`/jobs/${job.id}`} className="hover:underline">
+                            {job.title}
                           </Link>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center gap-2">
+                          <Briefcase className="h-4 w-4 text-muted-foreground" />
+                          <span>{company.name}</span>
                         </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <Briefcase className="h-10 w-10 mx-auto text-gray-300 mb-4" />
-                      <p className="text-gray-500">No open positions at this company right now.</p>
-                    </div>
-                  )}
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span>{job.location}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge>{job.type}</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Contact Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center">
-                  <Mail className="h-4 w-4 mr-3 text-gray-500" />
-                  <a href={`mailto:${company.email}`} className="text-unisphere-blue hover:underline">
-                    {company.email}
-                  </a>
-                </div>
-                {company.phone && <div className="flex items-center">
-                  <Phone className="h-4 w-4 mr-3 text-gray-500" />
-                  <span className="text-gray-700">{company.phone}</span>
-                </div>}
-                {company.website && <div className="flex items-center">
-                  <Globe className="h-4 w-4 mr-3 text-gray-500" />
-                  <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-unisphere-blue hover:underline">
-                    Company Website
-                  </a>
-                </div>}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Stats</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Open Positions</span>
-                  <span className="font-medium">{openPositions?.length || 0}</span>
-                </div>
-                {company.rating && <div className="flex justify-between">
-                  <span className="text-gray-600">Company Rating</span>
-                  <span className="font-medium">{company.rating}/5.0</span>
-                </div>}
-                {company.founded && <div className="flex justify-between">
-                  <span className="text-gray-600">Years in Business</span>
-                  <span className="font-medium">{new Date().getFullYear() - parseInt(company.founded)} years</span>
-                </div>}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+              ) : (
+                <p className="text-muted-foreground">No open positions at this time.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </MainLayout>
   );

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +9,8 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import AdminLogin from "./pages/AdminLogin";
+import ForgotPassword from "./pages/ForgotPassword";
+import AdminForgotPassword from "./pages/AdminForgotPassword";
 import Jobs from "./pages/Jobs";
 import Resume from "./pages/Resume";
 import Calendar from "./pages/Calendar";
@@ -39,7 +42,9 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/admin" element={<AdminLogin />} />
+            <Route path="/admin-recover" element={<AdminForgotPassword />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/jobs" element={<AdminJobManagement />} />
             <Route path="/admin/employers" element={<AdminEmployerReview />} />

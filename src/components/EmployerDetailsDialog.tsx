@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -6,10 +5,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, XCircle, Clock, Building, Mail, Calendar } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Building, Mail, Calendar, Trash2 } from "lucide-react";
 import { Timestamp } from "firebase/firestore";
 
 interface Employer {
@@ -25,9 +35,10 @@ interface EmployerDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdateStatus: (employerId: string, status: 'Verified' | 'Rejected') => void;
+  onDeleteEmployer: (employerId: string) => void;
 }
 
-const EmployerDetailsDialog = ({ employer, open, onOpenChange, onUpdateStatus }: EmployerDetailsDialogProps) => {
+const EmployerDetailsDialog = ({ employer, open, onOpenChange, onUpdateStatus, onDeleteEmployer }: EmployerDetailsDialogProps) => {
   if (!employer) return null;
 
   const getStatusBadge = (status: Employer['status']) => {
@@ -110,32 +121,66 @@ const EmployerDetailsDialog = ({ employer, open, onOpenChange, onUpdateStatus }:
             </CardContent>
           </Card>
 
-          <div className="flex justify-end space-x-3">
-            {employer.status !== 'Rejected' && (
-              <Button
-                variant="outline"
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                onClick={() => {
-                  onUpdateStatus(employer.id, 'Rejected');
-                  onOpenChange(false);
-                }}
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                Reject
-              </Button>
-            )}
-            {employer.status !== 'Verified' && (
-              <Button
-                className="bg-green-600 hover:bg-green-700"
-                onClick={() => {
-                  onUpdateStatus(employer.id, 'Verified');
-                  onOpenChange(false);
-                }}
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Approve
-              </Button>
-            )}
+          <div className="flex justify-between items-center">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Employer
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the employer "{employer.companyName}" and remove all their data from the system.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-red-600 hover:bg-red-700"
+                    onClick={() => {
+                      onDeleteEmployer(employer.id);
+                      onOpenChange(false);
+                    }}
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <div className="flex space-x-3">
+              {employer.status !== 'Rejected' && (
+                <Button
+                  variant="outline"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => {
+                    onUpdateStatus(employer.id, 'Rejected');
+                    onOpenChange(false);
+                  }}
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Reject
+                </Button>
+              )}
+              {employer.status !== 'Verified' && (
+                <Button
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={() => {
+                    onUpdateStatus(employer.id, 'Verified');
+                    onOpenChange(false);
+                  }}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Approve
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>

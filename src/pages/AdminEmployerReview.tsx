@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, updateDoc, Timestamp, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, deleteDoc, Timestamp, query, orderBy } from "firebase/firestore";
 import { useToast } from "@/components/ui/use-toast";
 import MainLayout from "@/components/MainLayout";
 import EmployerDetailsDialog from "@/components/EmployerDetailsDialog";
@@ -103,8 +103,34 @@ const AdminEmployerReview = () => {
     }
   });
 
+  const deleteEmployer = useMutation({
+    mutationFn: async (employerId: string) => {
+      const employerDocRef = doc(db, 'employers', employerId);
+      await deleteDoc(employerDocRef);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employers'] });
+      toast({
+        title: "Success",
+        description: "Employer has been successfully deleted.",
+      });
+    },
+    onError: (err) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete employer.",
+        variant: "destructive",
+      });
+      console.error("Error deleting employer:", err);
+    }
+  });
+
   const handleUpdateStatus = (employerId: string, status: 'Verified' | 'Rejected') => {
     updateEmployerStatus.mutate({ employerId, status });
+  };
+
+  const handleDeleteEmployer = (employerId: string) => {
+    deleteEmployer.mutate(employerId);
   };
 
   const handleViewDetails = (employer: Employer) => {
@@ -231,6 +257,7 @@ const AdminEmployerReview = () => {
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           onUpdateStatus={handleUpdateStatus}
+          onDeleteEmployer={handleDeleteEmployer}
         />
       </div>
     </MainLayout>

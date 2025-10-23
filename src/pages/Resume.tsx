@@ -2,13 +2,16 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, LogIn, Download, Edit } from "lucide-react";
+import { FileText, LogIn, Download, Edit, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
+import ResumeBuilder from "@/components/resume/ResumeBuilder";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const Resume = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [showBuilder, setShowBuilder] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -114,8 +117,11 @@ const Resume = () => {
             </CardHeader>
             <CardContent>
               <div className="text-center py-8">
-                <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <Button className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white">
+                <Plus className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <Button 
+                  className="bg-unisphere-blue hover:bg-unisphere-darkBlue text-white"
+                  onClick={() => setShowBuilder(true)}
+                >
                   Create Resume
                 </Button>
               </div>
@@ -178,6 +184,15 @@ const Resume = () => {
           </Card>
         </div>
       </div>
+
+      <Dialog open={showBuilder} onOpenChange={setShowBuilder}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl text-unisphere-darkBlue">Create Your Resume</DialogTitle>
+          </DialogHeader>
+          <ResumeBuilder />
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };

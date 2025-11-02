@@ -2,14 +2,14 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, LogIn, Download, Edit, Plus, Upload } from "lucide-react";
+import { FileText, LogIn, Download, Edit, Plus, Upload, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
 import ResumeBuilder from "@/components/resume/ResumeBuilder";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { db, auth } from "@/lib/firebase";
-import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, addDoc, deleteDoc, doc } from "firebase/firestore";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Resume {
@@ -74,6 +74,29 @@ const Resume = () => {
       setResumes(fetchedResumes);
     } catch (error) {
       console.error("Error fetching resumes:", error);
+    }
+  };
+
+  const handleDelete = async (resumeId: string) => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      await deleteDoc(doc(db, "resumes", resumeId));
+      
+      toast({
+        title: "Resume Deleted",
+        description: "Your resume has been successfully deleted."
+      });
+
+      fetchResumes();
+    } catch (error) {
+      console.error("Error deleting resume:", error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete resume. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -228,17 +251,51 @@ ${resume.projects.map(proj => `${proj.name}\n${proj.description}\nTechnologies: 
           {resumes.map((resume) => (
             <Card key={resume.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
-                <CardTitle className="text-xl text-unisphere-darkBlue">My Resume</CardTitle>
-                <CardDescription>
-                  {resume.personalInfo.name}
-                </CardDescription>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-xl text-unisphere-darkBlue">{resume.personalInfo.name}</CardTitle>
+                    <CardDescription className="mt-1">
+                      {resume.personalInfo.email}
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => handleDelete(resume.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-2">{resume.personalInfo.name}</h4>
-                    <p className="text-sm text-gray-600">{resume.experience[0]?.position || 'Student'}</p>
-                    <p className="text-xs text-gray-500 mt-2">{resume.education[0]?.institution || 'University'}</p>
+                  <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Current Position</p>
+                      <p className="text-sm font-medium text-gray-900">{resume.experience[0]?.position || 'Student'}</p>
+                      <p className="text-xs text-gray-600">{resume.experience[0]?.company || ''}</p>
+                    </div>
+                    <div className="pt-2 border-t border-gray-200">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Education</p>
+                      <p className="text-sm text-gray-900">{resume.education[0]?.degree || 'N/A'}</p>
+                      <p className="text-xs text-gray-600">{resume.education[0]?.institution || 'University'}</p>
+                    </div>
+                    <div className="pt-2 border-t border-gray-200">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Skills</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {resume.skills.slice(0, 5).map((skill, idx) => (
+                          <span key={idx} className="text-xs bg-unisphere-blue/10 text-unisphere-darkBlue px-2 py-1 rounded">
+                            {skill}
+                          </span>
+                        ))}
+                        {resume.skills.length > 5 && (
+                          <span className="text-xs text-gray-500 px-2 py-1">
+                            +{resume.skills.length - 5} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <div className="flex space-x-2">
                     <Button 

@@ -198,11 +198,32 @@ const AIResumeScreen = () => {
                 <CardTitle className="text-xl text-unisphere-darkBlue">Select Job</CardTitle>
                 <CardDescription>Choose a job to match your resume against</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {["Software Engineer Intern", "Data Analyst", "Marketing Assistant"].map((job) => (
+              <CardContent className="space-y-3 max-h-96 overflow-y-auto">
+                {[
+                  "Software Engineer Intern",
+                  "Data Analyst", 
+                  "Marketing Assistant",
+                  "Product Manager",
+                  "UI/UX Designer",
+                  "Business Analyst",
+                  "Frontend Developer",
+                  "Backend Developer",
+                  "Full Stack Developer",
+                  "DevOps Engineer",
+                  "Machine Learning Engineer",
+                  "Data Scientist",
+                  "Cybersecurity Analyst",
+                  "Project Manager",
+                  "Sales Executive",
+                  "Content Writer",
+                  "Graphic Designer",
+                  "HR Manager",
+                  "Financial Analyst",
+                  "Operations Manager"
+                ].map((job) => (
                   <div 
                     key={job}
-                    className={`p-3 border rounded-md cursor-pointer ${
+                    className={`p-3 border rounded-md cursor-pointer transition-colors ${
                       selectedJob === job ? 'border-unisphere-blue bg-unisphere-blue/10' : 'border-gray-200 hover:border-gray-300'
                     }`}
                     onClick={() => setSelectedJob(job)}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, Save } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { db, auth } from "@/lib/firebase";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { collection, addDoc, updateDoc, doc, Timestamp } from "firebase/firestore";
 
 interface PersonalInfo {
   name: string;
@@ -39,8 +39,13 @@ interface Project {
   technologies: string;
 }
 
-const ResumeBuilder = () => {
+interface ResumeBuilderProps {
+  initialData?: any;
+}
+
+const ResumeBuilder = ({ initialData }: ResumeBuilderProps) => {
   const { toast } = useToast();
+  const [resumeId, setResumeId] = useState<string | null>(null);
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
     name: "",
     email: "",
@@ -64,6 +69,29 @@ const ResumeBuilder = () => {
   ]);
 
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (initialData) {
+      setResumeId(initialData.id);
+      setPersonalInfo(initialData.personalInfo || {
+        name: "",
+        email: "",
+        phone: "",
+        linkedin: "",
+        location: ""
+      });
+      setEducation(initialData.education?.length > 0 ? initialData.education : [
+        { institution: "", degree: "", field: "", startDate: "", endDate: "" }
+      ]);
+      setExperience(initialData.experience?.length > 0 ? initialData.experience : [
+        { company: "", position: "", startDate: "", endDate: "", description: "" }
+      ]);
+      setSkills(Array.isArray(initialData.skills) ? initialData.skills.join(', ') : '');
+      setProjects(initialData.projects?.length > 0 ? initialData.projects : [
+        { name: "", description: "", technologies: "" }
+      ]);
+    }
+  }, [initialData]);
 
   const addEducation = () => {
     setEducation([...education, { institution: "", degree: "", field: "", startDate: "", endDate: "" }]);
@@ -109,16 +137,27 @@ const ResumeBuilder = () => {
         experience: experience.filter(exp => exp.company || exp.position),
         skills: skills.split(',').map(s => s.trim()).filter(s => s),
         projects: projects.filter(proj => proj.name),
-        createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()
       };
 
-      await addDoc(collection(db, "resumes"), resumeData);
-
-      toast({
-        title: "Success",
-        description: "Your resume has been saved successfully"
-      });
+      if (resumeId) {
+        // Update existing resume
+        await updateDoc(doc(db, "resumes", resumeId), resumeData);
+        toast({
+          title: "Success",
+          description: "Your resume has been updated successfully"
+        });
+      } else {
+        // Create new resume
+        await addDoc(collection(db, "resumes"), {
+          ...resumeData,
+          createdAt: Timestamp.now()
+        });
+        toast({
+          title: "Success",
+          description: "Your resume has been saved successfully"
+        });
+      }
     } catch (error) {
       console.error("Error saving resume:", error);
       toast({

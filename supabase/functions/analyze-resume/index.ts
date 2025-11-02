@@ -74,16 +74,25 @@ Provide a JSON response with:
     }
 
     const data = await response.json();
-    const analysisText = data.choices[0].message.content;
+    let analysisText = data.choices[0].message.content;
     
     console.log('Analysis received:', analysisText);
 
-    // Parse the JSON response
+    // Parse the JSON response - handle markdown code blocks
     let analysis;
     try {
-      analysis = JSON.parse(analysisText);
+      // Remove markdown code block wrapper if present
+      if (analysisText.includes('```json')) {
+        analysisText = analysisText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      } else if (analysisText.includes('```')) {
+        analysisText = analysisText.replace(/```\n?/g, '');
+      }
+      
+      analysis = JSON.parse(analysisText.trim());
+      console.log('Successfully parsed analysis:', analysis);
     } catch (e) {
       console.error('Failed to parse AI response as JSON:', e);
+      console.error('Raw response:', analysisText);
       // Fallback response if AI doesn't return valid JSON
       analysis = {
         score: 75,

@@ -21,7 +21,7 @@ serve(async (req) => {
 
     console.log('Analyzing resume for job match...');
 
-    const prompt = `You are a professional resume analyst. Analyze the following resume against the job description and provide detailed feedback.
+    const prompt = `You are a professional resume analyst. Analyze the following resume against the job description and provide detailed feedback. Accept both UK and US English spellings (e.g., "organise/organize", "colour/color", "centre/center") as equally valid.
 
 Resume:
 Name: ${resumeData.personalInfo?.name || 'N/A'}

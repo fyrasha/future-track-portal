@@ -114,16 +114,16 @@ const AIResumeScreen = () => {
     "Customer Success Manager", "Customer Support Manager", "Client Relations Manager",
     
     // Operations & Management
-    "Operations Manager", "Operations Director", "COO", "Operations Analyst",
+    "Operations Manager", "Operations Director", "Chief Operations Officer", "Operations Analyst",
     "Supply Chain Manager", "Supply Chain Analyst", "Logistics Manager", "Procurement Manager",
-    "Project Manager", "Senior Project Manager", "Program Manager", "Portfolio Manager",
+    "Project Manager", "Senior Project Manager", "Program Manager (Operations)", "Portfolio Manager",
     "Scrum Master", "Agile Coach", "Product Owner", "Release Manager", "Delivery Manager",
     "Change Manager", "Organizational Change Manager", "Transformation Manager",
     "General Manager", "Operations Lead", "Team Lead", "Department Manager",
     
     // Finance & Accounting
     "Accountant", "Senior Accountant", "Staff Accountant", "Public Accountant",
-    "Financial Controller", "Finance Manager", "CFO", "Finance Director",
+    "Financial Controller", "Finance Manager", "Chief Financial Officer", "Finance Director",
     "Investment Banker", "Investment Associate", "Equity Research Analyst",
     "Portfolio Manager", "Asset Manager", "Wealth Manager", "Financial Advisor",
     "Tax Consultant", "Tax Analyst", "Tax Manager", "Auditor", "Internal Auditor",
@@ -189,7 +189,7 @@ const AIResumeScreen = () => {
     "Leasing Consultant", "Real Estate Analyst", "Commercial Real Estate Manager",
     
     // Nonprofit & Social Services
-    "Program Manager", "Program Coordinator", "Grant Writer",
+    "Program Manager (Nonprofit)", "Program Coordinator", "Grant Writer",
     "Social Worker", "Case Manager", "Counselor", "Therapist",
     "Fundraising Manager", "Development Director", "Volunteer Coordinator",
     
@@ -209,7 +209,7 @@ const AIResumeScreen = () => {
     "Financial Consultant", "Marketing Consultant", "HR Consultant",
     
     // Startups & Entrepreneurship
-    "Founder", "Co-Founder", "CEO", "CTO", "COO", "CFO",
+    "Founder", "Co-Founder", "Chief Executive Officer", "Chief Technology Officer", "Chief Operating Officer", "Chief Finance Officer",
     "Startup Consultant", "Venture Capital Analyst", "Angel Investor",
     
     // Internships & Entry Level

@@ -9,13 +9,15 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { 
   Upload, 
   FileText, 
   CheckCircle2, 
   AlertCircle, 
   ArrowRight,
-  Download
+  Download,
+  Search
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import { Progress } from "@/components/ui/progress";
@@ -52,8 +54,67 @@ const AIResumeScreen = () => {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [selectedResume, setSelectedResume] = useState<Resume | null>(null);
   const [selectedJob, setSelectedJob] = useState<string | null>("Software Engineer Intern");
+  const [jobSearchQuery, setJobSearchQuery] = useState("");
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const { toast } = useToast();
+
+  const jobPositions = [
+    "Software Engineer Intern",
+    "Data Analyst", 
+    "Marketing Assistant",
+    "Product Manager",
+    "UI/UX Designer",
+    "Business Analyst",
+    "Frontend Developer",
+    "Backend Developer",
+    "Full Stack Developer",
+    "DevOps Engineer",
+    "Machine Learning Engineer",
+    "Data Scientist",
+    "Cybersecurity Analyst",
+    "Project Manager",
+    "Sales Executive",
+    "Content Writer",
+    "Graphic Designer",
+    "HR Manager",
+    "Financial Analyst",
+    "Operations Manager",
+    "Quality Assurance Engineer",
+    "Mobile App Developer",
+    "Cloud Architect",
+    "Network Engineer",
+    "Database Administrator",
+    "Scrum Master",
+    "Product Designer",
+    "Digital Marketing Specialist",
+    "SEO Specialist",
+    "Social Media Manager",
+    "Customer Success Manager",
+    "Account Manager",
+    "Supply Chain Analyst",
+    "Research Analyst",
+    "Investment Analyst",
+    "Legal Intern",
+    "Paralegal",
+    "Technical Writer",
+    "Solutions Architect",
+    "Systems Engineer",
+    "IT Support Specialist",
+    "Game Developer",
+    "Blockchain Developer",
+    "AI Engineer",
+    "Robotics Engineer",
+    "Embedded Systems Engineer",
+    "Site Reliability Engineer",
+    "Platform Engineer",
+    "Release Manager",
+    "Change Manager",
+    "Compliance Officer"
+  ];
+
+  const filteredJobs = jobPositions.filter(job =>
+    job.toLowerCase().includes(jobSearchQuery.toLowerCase())
+  );
 
   // Fetch resumes from Firestore when component mounts
   useEffect(() => {
@@ -198,39 +259,34 @@ const AIResumeScreen = () => {
                 <CardTitle className="text-xl text-unisphere-darkBlue">Select Job</CardTitle>
                 <CardDescription>Choose a job to match your resume against</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3 max-h-96 overflow-y-auto">
-                {[
-                  "Software Engineer Intern",
-                  "Data Analyst", 
-                  "Marketing Assistant",
-                  "Product Manager",
-                  "UI/UX Designer",
-                  "Business Analyst",
-                  "Frontend Developer",
-                  "Backend Developer",
-                  "Full Stack Developer",
-                  "DevOps Engineer",
-                  "Machine Learning Engineer",
-                  "Data Scientist",
-                  "Cybersecurity Analyst",
-                  "Project Manager",
-                  "Sales Executive",
-                  "Content Writer",
-                  "Graphic Designer",
-                  "HR Manager",
-                  "Financial Analyst",
-                  "Operations Manager"
-                ].map((job) => (
-                  <div 
-                    key={job}
-                    className={`p-3 border rounded-md cursor-pointer transition-colors ${
-                      selectedJob === job ? 'border-unisphere-blue bg-unisphere-blue/10' : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => setSelectedJob(job)}
-                  >
-                    <p className="font-medium">{job}</p>
-                  </div>
-                ))}
+              <CardContent className="space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search job positions..."
+                    value={jobSearchQuery}
+                    onChange={(e) => setJobSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="max-h-80 overflow-y-auto space-y-2">
+                  {filteredJobs.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-4">No jobs found</p>
+                  ) : (
+                    filteredJobs.map((job) => (
+                      <div 
+                        key={job}
+                        className={`p-3 border rounded-md cursor-pointer transition-colors ${
+                          selectedJob === job ? 'border-unisphere-blue bg-unisphere-blue/10' : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        onClick={() => setSelectedJob(job)}
+                      >
+                        <p className="font-medium">{job}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
               </CardContent>
               <CardFooter>
                 <Button 

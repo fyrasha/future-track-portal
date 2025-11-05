@@ -59,57 +59,164 @@ const AIResumeScreen = () => {
   const { toast } = useToast();
 
   const jobPositions = [
-    "Software Engineer Intern",
-    "Data Analyst", 
-    "Marketing Assistant",
-    "Product Manager",
-    "UI/UX Designer",
-    "Business Analyst",
-    "Frontend Developer",
-    "Backend Developer",
-    "Full Stack Developer",
-    "DevOps Engineer",
-    "Machine Learning Engineer",
-    "Data Scientist",
-    "Cybersecurity Analyst",
-    "Project Manager",
-    "Sales Executive",
-    "Content Writer",
-    "Graphic Designer",
-    "HR Manager",
-    "Financial Analyst",
-    "Operations Manager",
-    "Quality Assurance Engineer",
-    "Mobile App Developer",
-    "Cloud Architect",
-    "Network Engineer",
-    "Database Administrator",
-    "Scrum Master",
-    "Product Designer",
-    "Digital Marketing Specialist",
-    "SEO Specialist",
-    "Social Media Manager",
-    "Customer Success Manager",
-    "Account Manager",
-    "Supply Chain Analyst",
-    "Research Analyst",
-    "Investment Analyst",
-    "Legal Intern",
-    "Paralegal",
-    "Technical Writer",
-    "Solutions Architect",
-    "Systems Engineer",
-    "IT Support Specialist",
-    "Game Developer",
-    "Blockchain Developer",
-    "AI Engineer",
-    "Robotics Engineer",
-    "Embedded Systems Engineer",
-    "Site Reliability Engineer",
-    "Platform Engineer",
-    "Release Manager",
-    "Change Manager",
-    "Compliance Officer"
+    // Software & Technology
+    "Software Engineer", "Software Engineer Intern", "Senior Software Engineer", "Lead Software Engineer", "Principal Software Engineer",
+    "Frontend Developer", "Senior Frontend Developer", "Frontend Engineer", "React Developer", "Vue.js Developer", "Angular Developer",
+    "Backend Developer", "Senior Backend Developer", "Backend Engineer", "Node.js Developer", "Python Developer", "Java Developer", "Go Developer",
+    "Full Stack Developer", "Senior Full Stack Developer", "Full Stack Engineer", "MEAN Stack Developer", "MERN Stack Developer",
+    "Mobile App Developer", "iOS Developer", "Android Developer", "React Native Developer", "Flutter Developer", "Mobile Engineer",
+    "DevOps Engineer", "Senior DevOps Engineer", "DevOps Specialist", "Cloud DevOps Engineer", "Platform Engineer", "Site Reliability Engineer",
+    "Cloud Architect", "Cloud Engineer", "AWS Engineer", "Azure Engineer", "Google Cloud Engineer", "Cloud Solutions Architect",
+    "Data Engineer", "Senior Data Engineer", "Big Data Engineer", "Data Platform Engineer", "ETL Developer",
+    "Machine Learning Engineer", "Senior ML Engineer", "AI Engineer", "Deep Learning Engineer", "Computer Vision Engineer", "NLP Engineer",
+    "Data Scientist", "Senior Data Scientist", "Lead Data Scientist", "Applied Scientist", "Research Scientist",
+    "Quality Assurance Engineer", "QA Engineer", "QA Automation Engineer", "Test Engineer", "SDET", "QA Lead",
+    "Cybersecurity Analyst", "Security Engineer", "Information Security Analyst", "Penetration Tester", "Security Consultant",
+    "Database Administrator", "DBA", "Database Engineer", "SQL Developer", "Database Architect",
+    "Systems Engineer", "Systems Administrator", "Linux Administrator", "Windows Administrator", "Infrastructure Engineer",
+    "Network Engineer", "Network Administrator", "Network Architect", "Network Security Engineer",
+    "Solutions Architect", "Enterprise Architect", "Technical Architect", "IT Architect",
+    "Game Developer", "Game Programmer", "Unity Developer", "Unreal Engine Developer", "Game Designer",
+    "Blockchain Developer", "Smart Contract Developer", "Web3 Developer", "Cryptocurrency Developer",
+    "Embedded Systems Engineer", "Firmware Engineer", "IoT Engineer", "Hardware Engineer",
+    "Robotics Engineer", "Automation Engineer", "Control Systems Engineer",
+    "IT Support Specialist", "IT Support Engineer", "Help Desk Technician", "Technical Support Engineer",
+    
+    // Product & Design
+    "Product Manager", "Senior Product Manager", "Lead Product Manager", "Principal Product Manager", "Associate Product Manager",
+    "Product Owner", "Technical Product Manager", "Growth Product Manager", "Product Marketing Manager",
+    "Product Designer", "Senior Product Designer", "Lead Product Designer",
+    "UI/UX Designer", "UI Designer", "UX Designer", "Senior UX Designer", "UX Researcher", "User Experience Designer",
+    "Graphic Designer", "Senior Graphic Designer", "Visual Designer", "Brand Designer", "Illustrator",
+    "Motion Graphics Designer", "Animator", "3D Artist", "Video Editor",
+    "Industrial Designer", "Interaction Designer", "Service Designer",
+    
+    // Data & Analytics
+    "Data Analyst", "Senior Data Analyst", "Business Intelligence Analyst", "Analytics Engineer",
+    "Business Analyst", "Senior Business Analyst", "Systems Analyst", "Process Analyst",
+    "Market Research Analyst", "Research Analyst", "Insights Analyst",
+    "Financial Analyst", "Senior Financial Analyst", "Investment Analyst", "Budget Analyst", "Credit Analyst",
+    "Risk Analyst", "Quantitative Analyst", "Actuarial Analyst",
+    
+    // Marketing & Sales
+    "Marketing Manager", "Senior Marketing Manager", "Marketing Director", "Chief Marketing Officer",
+    "Digital Marketing Specialist", "Digital Marketing Manager", "Performance Marketing Manager",
+    "Content Marketing Manager", "Content Strategist", "Content Writer", "Copywriter", "SEO Content Writer",
+    "SEO Specialist", "SEO Manager", "SEM Specialist", "Search Marketing Manager",
+    "Social Media Manager", "Social Media Specialist", "Community Manager", "Social Media Coordinator",
+    "Email Marketing Specialist", "Marketing Automation Specialist", "CRM Manager",
+    "Brand Manager", "Brand Strategist", "Brand Marketing Manager",
+    "Growth Marketing Manager", "Growth Hacker", "Acquisition Manager",
+    "Sales Executive", "Account Executive", "Sales Representative", "Inside Sales Representative",
+    "Sales Manager", "Sales Director", "Regional Sales Manager", "VP of Sales",
+    "Account Manager", "Senior Account Manager", "Key Account Manager", "Client Success Manager",
+    "Business Development Manager", "Business Development Representative", "Partnership Manager",
+    "Customer Success Manager", "Customer Support Manager", "Client Relations Manager",
+    
+    // Operations & Management
+    "Operations Manager", "Operations Director", "COO", "Operations Analyst",
+    "Supply Chain Manager", "Supply Chain Analyst", "Logistics Manager", "Procurement Manager",
+    "Project Manager", "Senior Project Manager", "Program Manager", "Portfolio Manager",
+    "Scrum Master", "Agile Coach", "Product Owner", "Release Manager", "Delivery Manager",
+    "Change Manager", "Organizational Change Manager", "Transformation Manager",
+    "General Manager", "Operations Lead", "Team Lead", "Department Manager",
+    
+    // Finance & Accounting
+    "Accountant", "Senior Accountant", "Staff Accountant", "Public Accountant",
+    "Financial Controller", "Finance Manager", "CFO", "Finance Director",
+    "Investment Banker", "Investment Associate", "Equity Research Analyst",
+    "Portfolio Manager", "Asset Manager", "Wealth Manager", "Financial Advisor",
+    "Tax Consultant", "Tax Analyst", "Tax Manager", "Auditor", "Internal Auditor",
+    "Treasurer", "Cash Manager", "Financial Planning Analyst",
+    
+    // Human Resources
+    "HR Manager", "HR Director", "Chief People Officer", "HR Business Partner",
+    "Recruiter", "Technical Recruiter", "Talent Acquisition Specialist", "Recruitment Manager",
+    "HR Generalist", "HR Specialist", "HR Coordinator", "HR Assistant",
+    "Compensation & Benefits Specialist", "Payroll Specialist", "HRIS Analyst",
+    "Learning & Development Manager", "Training Manager", "Organizational Development Specialist",
+    "Employee Relations Specialist", "People Operations Manager",
+    
+    // Legal & Compliance
+    "Legal Counsel", "Corporate Lawyer", "Attorney", "Senior Associate",
+    "Paralegal", "Legal Assistant", "Legal Secretary",
+    "Compliance Officer", "Compliance Manager", "Compliance Analyst", "Regulatory Affairs Specialist",
+    "Contract Manager", "Contract Specialist", "Legal Operations Manager",
+    
+    // Healthcare & Medical
+    "Registered Nurse", "Nurse Practitioner", "Clinical Nurse", "ER Nurse",
+    "Medical Assistant", "Physician Assistant", "Healthcare Administrator",
+    "Medical Coder", "Medical Biller", "Health Information Technician",
+    "Clinical Research Coordinator", "Clinical Data Manager", "Pharmacist",
+    
+    // Engineering (Non-Software)
+    "Mechanical Engineer", "Senior Mechanical Engineer", "Mechanical Design Engineer",
+    "Civil Engineer", "Structural Engineer", "Construction Engineer",
+    "Electrical Engineer", "Electronics Engineer", "Power Systems Engineer",
+    "Chemical Engineer", "Process Engineer", "Manufacturing Engineer",
+    "Aerospace Engineer", "Aeronautical Engineer", "Aviation Engineer",
+    "Biomedical Engineer", "Environmental Engineer", "Sustainability Engineer",
+    
+    // Creative & Media
+    "Creative Director", "Art Director", "Design Director",
+    "Photographer", "Videographer", "Film Editor", "Producer",
+    "Content Creator", "Influencer Marketing Manager", "Podcast Producer",
+    "Journalist", "Editor", "Technical Writer", "Documentation Specialist",
+    "Public Relations Specialist", "PR Manager", "Communications Manager",
+    
+    // Education & Training
+    "Teacher", "Professor", "Instructor", "Tutor", "Academic Advisor",
+    "Curriculum Developer", "Instructional Designer", "Educational Consultant",
+    "Corporate Trainer", "Training Coordinator", "Learning Specialist",
+    
+    // Customer Service & Support
+    "Customer Service Representative", "Customer Support Specialist", "Call Center Agent",
+    "Technical Support Specialist", "Customer Experience Manager",
+    "Client Services Coordinator", "Service Desk Analyst",
+    
+    // Hospitality & Tourism
+    "Hotel Manager", "Front Desk Manager", "Event Coordinator", "Event Planner",
+    "Restaurant Manager", "Chef", "Sous Chef", "Catering Manager",
+    "Travel Consultant", "Tour Guide", "Hospitality Manager",
+    
+    // Retail & E-commerce
+    "Store Manager", "Retail Manager", "Assistant Store Manager",
+    "E-commerce Manager", "Merchandising Manager", "Buyer", "Category Manager",
+    "Retail Analyst", "Inventory Manager", "Visual Merchandiser",
+    
+    // Real Estate
+    "Real Estate Agent", "Real Estate Broker", "Property Manager",
+    "Leasing Consultant", "Real Estate Analyst", "Commercial Real Estate Manager",
+    
+    // Nonprofit & Social Services
+    "Program Manager", "Program Coordinator", "Grant Writer",
+    "Social Worker", "Case Manager", "Counselor", "Therapist",
+    "Fundraising Manager", "Development Director", "Volunteer Coordinator",
+    
+    // Manufacturing & Production
+    "Production Manager", "Plant Manager", "Production Supervisor",
+    "Quality Control Inspector", "Quality Manager", "Lean Manufacturing Specialist",
+    "Maintenance Technician", "Industrial Engineer", "Process Improvement Specialist",
+    
+    // Administrative
+    "Executive Assistant", "Administrative Assistant", "Office Manager",
+    "Receptionist", "Secretary", "Personal Assistant", "Virtual Assistant",
+    "Office Coordinator", "Administrative Coordinator",
+    
+    // Consulting
+    "Management Consultant", "Strategy Consultant", "Business Consultant",
+    "IT Consultant", "Technology Consultant", "Digital Transformation Consultant",
+    "Financial Consultant", "Marketing Consultant", "HR Consultant",
+    
+    // Startups & Entrepreneurship
+    "Founder", "Co-Founder", "CEO", "CTO", "COO", "CFO",
+    "Startup Consultant", "Venture Capital Analyst", "Angel Investor",
+    
+    // Internships & Entry Level
+    "Software Engineering Intern", "Data Science Intern", "Marketing Intern",
+    "Finance Intern", "HR Intern", "Business Development Intern",
+    "Legal Intern", "Research Intern", "Operations Intern",
+    "Graduate Trainee", "Management Trainee", "Associate",
   ];
 
   const filteredJobs = jobPositions.filter(job =>

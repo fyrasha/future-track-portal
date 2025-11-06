@@ -93,6 +93,7 @@ const CalendarPage = () => {
         return;
       }
 
+      // Fetch manually created calendar events
       const eventsRef = collection(db, "calendar_events");
       const q = query(eventsRef, where("userId", "==", user.uid));
       const querySnapshot = await getDocs(q);
@@ -100,6 +101,28 @@ const CalendarPage = () => {
       const fetchedEvents: CalendarEvent[] = [];
       querySnapshot.forEach((doc) => {
         fetchedEvents.push({ id: doc.id, ...doc.data() } as CalendarEvent);
+      });
+
+      // Fetch registered events from event registrations
+      const registrationsRef = collection(db, "eventRegistrations");
+      const regQuery = query(registrationsRef, where("studentId", "==", user.uid));
+      const regSnapshot = await getDocs(regQuery);
+      
+      regSnapshot.forEach((doc) => {
+        const regData = doc.data();
+        // Transform registered event into calendar event format
+        fetchedEvents.push({
+          id: `reg_${doc.id}`,
+          userId: user.uid,
+          title: regData.eventName,
+          company: "University Event",
+          date: regData.eventDate,
+          time: "TBD",
+          type: "event",
+          location: "Check Events page for details",
+          status: "registered",
+          description: "Event registration from Events page"
+        } as CalendarEvent);
       });
       
       setEvents(fetchedEvents);

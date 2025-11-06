@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
+import ReactMarkdown from 'react-markdown';
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -127,13 +128,30 @@ const Chatbot = () => {
                       className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
                     >
                       <div
-                        className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
+                        className={`max-w-xs px-4 py-3 rounded-lg text-sm ${
                           message.isBot
-                            ? 'bg-gray-100 text-gray-800'
+                            ? 'bg-muted text-foreground'
                             : 'bg-unisphere-blue text-white'
                         }`}
                       >
-                        {message.text}
+                        {message.isBot ? (
+                          <div className="prose prose-sm max-w-none dark:prose-invert">
+                            <ReactMarkdown
+                              components={{
+                                p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                                ul: ({node, ...props}) => <ul className="mb-2 last:mb-0 ml-4" {...props} />,
+                                ol: ({node, ...props}) => <ol className="mb-2 last:mb-0 ml-4" {...props} />,
+                                li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                                strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
+                                code: ({node, ...props}) => <code className="bg-background/50 px-1 rounded" {...props} />,
+                              }}
+                            >
+                              {message.text}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          message.text
+                        )}
                       </div>
                     </div>
                   ))}

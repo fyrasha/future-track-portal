@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 
-// Mock analytics data
+//dummy analytics data
 const jobViewsData = [
   { name: 'Mon', views: 120, applications: 15 },
   { name: 'Tue', views: 150, applications: 22 },

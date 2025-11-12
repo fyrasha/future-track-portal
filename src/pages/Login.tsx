@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -36,7 +35,7 @@ const Login = () => {
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
-      const userDocRef = doc(db, "users", user.uid);
+      const userDocRef = doc(db, "users", user.uid); //getting details from firestore
       const userDoc = await getDoc(userDocRef);
 
       let userRole = 'student';
@@ -67,7 +66,7 @@ const Login = () => {
       let errorMessage = "An unknown error occurred. Please try again.";
       switch (error.code) {
         case 'auth/invalid-email':
-          errorMessage = "The email address is not valid.";
+          errorMessage = "The email address is invalid.";
           break;
         case 'auth/user-disabled':
           errorMessage = "This user account has been disabled.";
@@ -112,7 +111,7 @@ const Login = () => {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="janedoe@example.com"
                     required
                     value={formData.email}
                     onChange={handleChange}

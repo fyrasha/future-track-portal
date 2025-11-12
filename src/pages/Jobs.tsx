@@ -259,8 +259,6 @@ const Jobs = () => {
             </div>
           )}
         </div>
-        
-        {/* Pagination removed as it's not connected to Firestore yet */}
 
         {/* Application Dialog */}
         {selectedJob && (

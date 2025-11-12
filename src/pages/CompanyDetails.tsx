@@ -46,14 +46,14 @@ const CompanyDetails = () => {
     queryKey: ['company', id],
     queryFn: async () => {
       if (!id) return null;
-      // First try to get from employers collection
+      //get from employers collection
       const employerDocRef = doc(db, 'employers', id);
       const employerDocSnap = await getDoc(employerDocRef);
       if (employerDocSnap.exists()) {
         return { id: employerDocSnap.id, ...employerDocSnap.data() } as Company;
       }
       
-      // Fallback: try users collection for backwards compatibility
+      //try users collection for backwards compatibility
       const userDocRef = doc(db, 'users', id);
       const userDocSnap = await getDoc(userDocRef);
       if (userDocSnap.exists() && userDocSnap.data().role === 'employer') {
@@ -70,7 +70,7 @@ const CompanyDetails = () => {
     queryFn: async () => {
       if (!id) return [];
       const jobsCollection = collection(db, "jobs");
-      // Only show Active jobs for the company
+      //only show Active jobs for the company
       const q = query(jobsCollection, where("companyId", "==", id), where("status", "==", "Active"));
       const jobSnapshot = await getDocs(q);
       return jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));

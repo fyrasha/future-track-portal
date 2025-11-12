@@ -22,7 +22,7 @@ const EventManagement = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   const { data: events = [], isLoading, error } = useQuery<Event[]>({
-    queryKey: ['events'],
+    queryKey: ['events'], //storing in db
     queryFn: async () => {
       const eventsCollection = collection(db, "events");
       const q = query(eventsCollection, orderBy("date", "desc"));

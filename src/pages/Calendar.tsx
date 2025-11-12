@@ -16,23 +16,23 @@ import MainLayout from "@/components/MainLayout";
 import ReminderSystem from "@/components/ReminderSystem";
 import { Link } from "react-router-dom";
 
-// Mock calendar events
+//mock calendar events
 const mockEvents = [
   {
     id: 1,
     title: "Technical Interview",
     company: "TechCorp Malaysia",
-    date: "2025-05-30",
+    date: "2025-06-28",
     time: "14:00 - 15:30",
     type: "interview",
-    location: "Zoom Meeting",
+    location: "Google Meet",
     status: "confirmed"
   },
   {
     id: 2,
     title: "Application Deadline",
     company: "Analytics Pro",
-    date: "2025-06-15", 
+    date: "2025-06-30", 
     time: "23:59",
     type: "deadline",
     location: "Online",
@@ -42,10 +42,10 @@ const mockEvents = [
     id: 3,
     title: "Career Fair",
     company: "University of Malaya",
-    date: "2025-06-20",
+    date: "2025-11-20",
     time: "09:00 - 17:00",
     type: "event",
-    location: "Main Hall, UM",
+    location: "Dewan Tunku Canselor, UM",
     status: "registered"
   }
 ];
@@ -73,7 +73,7 @@ const CalendarPage = () => {
 
   const events = isLoggedIn ? mockEvents : [];
 
-  // Get events for selected date
+  //get events for selected date
   const selectedDateEvents = selectedDate 
     ? events.filter(event => 
         new Date(event.date).toDateString() === selectedDate.toDateString()
@@ -88,7 +88,7 @@ const CalendarPage = () => {
     return eventDate >= today && eventDate <= nextWeek;
   }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  // Get dates that have events for calendar highlighting
+  //get dates that have events for calendar highlighting
   const eventDates = events.map(event => new Date(event.date));
 
   const getEventTypeColor = (type: string) => {
@@ -123,7 +123,7 @@ const CalendarPage = () => {
         <div className="container mx-auto py-8 px-4">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-2">Calendar</h1>
-            <p className="text-gray-600">Keep track of interviews, deadlines, and important events</p>
+            <p className="text-gray-600">Keep track of interviews, deadlines and important events</p>
           </div>
 
           <Card className="max-w-md mx-auto text-center">
@@ -164,7 +164,7 @@ const CalendarPage = () => {
       <div className="container mx-auto py-8 px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-2">Calendar</h1>
-          <p className="text-gray-600">Keep track of interviews, deadlines, and important events</p>
+          <p className="text-gray-600">Keep track of interviews, deadlines and important events</p>
         </div>
 
         {/* Reminder System */}
@@ -194,8 +194,8 @@ const CalendarPage = () => {
                   }}
                   modifiersStyles={{
                     eventDay: { 
-                      backgroundColor: '#dbeafe', 
-                      color: '#1e40af',
+                      backgroundColor: '#fa8072', 
+                      color: '#000000',
                       fontWeight: 'bold'
                     }
                   }}

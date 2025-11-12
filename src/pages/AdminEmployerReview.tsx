@@ -1,8 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, updateDoc, Timestamp, query, orderBy, addDoc, serverTimestamp, where } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, deleteDoc, Timestamp, query, orderBy } from "firebase/firestore";
 import { useToast } from "@/components/ui/use-toast";
 import MainLayout from "@/components/MainLayout";
+import EmployerDetailsDialog from "@/components/EmployerDetailsDialog";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -29,7 +31,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface Employer {
+interface Employer { //what goes in the table
   id: string;
   companyName: string;
   email: string;
@@ -40,9 +42,11 @@ interface Employer {
 const AdminEmployerReview = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [selectedEmployer, setSelectedEmployer] = useState<Employer | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: employers, isLoading, error } = useQuery<Employer[], Error>({
-    queryKey: ['employers'],
+    queryKey: ['employers'], //getting data from employers db
     queryFn: async () => {
       console.log("Fetching employers from 'employers' collection...");
       const employersCollection = collection(db, "employers");
@@ -62,7 +66,7 @@ const AdminEmployerReview = () => {
         };
       });
 
-      // Custom sort to bring 'Pending' status to the top
+      //custom sort to bring 'Pending' status to the top
       employerList.sort((a, b) => {
         if (a.status === 'Pending' && b.status !== 'Pending') return -1;
         if (a.status !== 'Pending' && b.status === 'Pending') return 1;
@@ -80,7 +84,7 @@ const AdminEmployerReview = () => {
   const updateEmployerStatus = useMutation({
     mutationFn: async ({ employerId, status }: { employerId: string, status: 'Verified' | 'Rejected' }) => {
       const employerDocRef = doc(db, 'employers', employerId);
-      await updateDoc(employerDocRef, { status });
+      await updateDoc(employerDocRef, { status }); //update in db
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['employers'] });
@@ -99,8 +103,39 @@ const AdminEmployerReview = () => {
     }
   });
 
+  const deleteEmployer = useMutation({
+    mutationFn: async (employerId: string) => {
+      const employerDocRef = doc(db, 'employers', employerId);
+      await deleteDoc(employerDocRef); //delete from db
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employers'] });
+      toast({
+        title: "Success",
+        description: "Employer has been successfully deleted.",
+      });
+    },
+    onError: (err) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete employer.",
+        variant: "destructive",
+      });
+      console.error("Error deleting employer:", err);
+    }
+  });
+
   const handleUpdateStatus = (employerId: string, status: 'Verified' | 'Rejected') => {
     updateEmployerStatus.mutate({ employerId, status });
+  };
+
+  const handleDeleteEmployer = (employerId: string) => {
+    deleteEmployer.mutate(employerId);
+  };
+
+  const handleViewDetails = (employer: Employer) => {
+    setSelectedEmployer(employer);
+    setDialogOpen(true);
   };
 
   const getStatusBadge = (status: Employer['status']) => {
@@ -196,7 +231,7 @@ const AdminEmployerReview = () => {
                               </Button>
                             </>
                           )}
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => handleViewDetails(employer)}>
                             <Eye className="h-4 w-4" />
                           </Button>
                         </div>
@@ -216,6 +251,14 @@ const AdminEmployerReview = () => {
             </Table>
           </CardContent>
         </Card>
+
+        <EmployerDetailsDialog
+          employer={selectedEmployer}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onUpdateStatus={handleUpdateStatus}
+          onDeleteEmployer={handleDeleteEmployer}
+        />
       </div>
     </MainLayout>
   );

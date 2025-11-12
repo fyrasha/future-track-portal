@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import MainLayout from "@/components/MainLayout";
 import { 
@@ -49,7 +48,7 @@ import {
   ResponsiveContainer
 } from "recharts";
 
-// Mock data
+//dummy data
 const analyticsData = {
   totalStudents: 1250,
   activeStudents: 892,
@@ -109,9 +108,10 @@ const chartConfig = {
 };
 
 const inactiveStudents = [
-  { id: 1, name: "Ahmad Rahman", email: "ahmad@student.edu", lastActivity: "Career Fair 2024", lastActivityDate: "2024-11-15", status: "Inactive" },
-  { id: 2, name: "Siti Nurhaliza", email: "siti@student.edu", lastActivity: "Resume Workshop", lastActivityDate: "2024-10-20", status: "Inactive" },
-  { id: 3, name: "Raj Kumar", email: "raj@student.edu", lastActivity: "Tech Symposium", lastActivityDate: "2024-09-25", status: "Inactive" }
+  { id: 1, name: "Adam Danial", email: "adam@student.com", lastActivity: "Career Fair 2024", lastActivityDate: "2024-06-11", status: "Inactive" },
+  { id: 2, name: "Ariessa Jezzemine", email: "ars@student.com", lastActivity: "Resume Workshop", lastActivityDate: "2024-08-03", status: "Inactive" },
+  { id: 3, name: "Adlin Hakimi", email: "adlin@student.com", lastActivity: "Tech Symposium", lastActivityDate: "2024-10-01", status: "Inactive" },
+  { id: 3, name: "Nur Syahindah", email: "syindah@student.com", lastActivity: "Guidewire Site Visit", lastActivityDate: "2024-11-12", status: "Inactive" }
 ];
 
 const topCompanies = [
@@ -142,9 +142,9 @@ const AdminDashboard = () => {
           </TabsList>
 
           <TabsContent value="student-activity" className="space-y-6">
-            {/* Student Analytics Overview */}
+            {/* Student Analytics Overview */} 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
+              <Card> 
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium">Total Students</CardTitle>
                 </CardHeader>

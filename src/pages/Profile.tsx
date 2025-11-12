@@ -22,7 +22,7 @@ const Profile = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
 
-  // Profile data state
+  //profile data state
   const [profileData, setProfileData] = useState({
     fullName: "",
     email: "",
@@ -36,7 +36,7 @@ const Profile = () => {
     bio: "",
   });
 
-  // Password change state
+  //password change state
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -146,16 +146,16 @@ const Profile = () => {
       return;
     }
 
-    if (passwordData.newPassword.length < 6) {
+    if (passwordData.newPassword.length < 8) {
       toast({
         title: "Password Too Short",
-        description: "Password must be at least 6 characters long.",
+        description: "Password must be at least 8 characters long.",
         variant: "destructive"
       });
       return;
     }
 
-    // In a real app, this would make an API call
+    //make an API call
     setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
     toast({
       title: "Password Changed",

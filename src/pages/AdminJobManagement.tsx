@@ -62,7 +62,7 @@ const AdminJobManagement = () => {
   const { data: jobListings, isLoading, error } = useQuery({
     queryKey: ['jobs'],
     queryFn: async (): Promise<Job[]> => {
-      const jobsCollection = collection(db, "jobs");
+      const jobsCollection = collection(db, "jobs"); //goes to the db
       const q = query(jobsCollection, orderBy("postedDate", "desc"));
       const jobSnapshot = await getDocs(q);
       return jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
@@ -72,20 +72,19 @@ const AdminJobManagement = () => {
   const addJobMutation = useMutation({
     mutationFn: async (newJob: JobFormValues) => {
       const employersCollection = collection(db, "employers");
-      // The field in 'employers' collection for the company name is 'companyName'.
+      //the field in 'employers' collection for the company name is 'companyName'
       const q = query(employersCollection, where("companyName", "==", newJob.company));
       const companySnapshot = await getDocs(q);
 
       let companyId: string;
 
       if (companySnapshot.empty) {
-        // Employer not found, so create a new one with 'Pending' status for review.
+        //employer not found, so create a new one with 'Pending' status for review
         console.log(`Employer "${newJob.company}" not found. Creating a new entry with 'Pending' status.`);
         const newEmployerRef = await addDoc(collection(db, "employers"), {
             companyName: newJob.company,
-            // A placeholder email is used as it's not available in the job creation form.
-            // This can be updated later if needed.
-            email: `${newJob.company.toLowerCase().replace(/\s+/g, '.')}@placeholder.unisphere.com`,
+            // A placeholder email is used as it's not available in the job creation form
+            email: `${newJob.company.toLowerCase().replace(/\s+/g, '.')}@unisphere.com`,
             status: 'Pending',
             createdAt: serverTimestamp(),
         });
@@ -110,7 +109,7 @@ const AdminJobManagement = () => {
         const optimisticJob: Job = {
           id: `temp-${Date.now()}`,
           ...newJob,
-          companyId: `optimistic-id-${Date.now()}`, // Placeholder for optimistic update
+          companyId: `optimistic-id-${Date.now()}`, //placeholder for optimistic update
           postedDate: Timestamp.now(),
           deadline: Timestamp.fromDate(newJob.deadline),
           applications: 0,
@@ -134,7 +133,7 @@ const AdminJobManagement = () => {
     },
   });
 
-  const updateJobMutation = useMutation({
+  const updateJobMutation = useMutation({ //to update job details
     mutationFn: async ({ id, ...jobData }: { id: string } & JobFormValues) => {
       if (!id) throw new Error("Job ID is missing");
       const jobRef = doc(db, "jobs", id);
@@ -178,7 +177,7 @@ const AdminJobManagement = () => {
     },
   });
 
-  const deleteJobMutation = useMutation({
+  const deleteJobMutation = useMutation({ //to delete a job
     mutationFn: async (job: Job) => {
       await deleteDoc(doc(db, "jobs", job.id));
       return job;

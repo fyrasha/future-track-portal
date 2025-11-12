@@ -16,7 +16,7 @@ const Index = () => {
                 Your Career Journey <br />Starts with UniSphere
               </h1>
               <p className="text-lg md:text-xl text-unisphere-lightBlue/90 mb-8 md:pr-12">
-                Connect with top employers, get AI-powered career recommendations,
+                Connect with top employers, get AI-powered career recommendations
                 and manage your job applications all in one place.
               </p>
               <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
@@ -67,7 +67,7 @@ const Index = () => {
               </div>
               <h3 className="text-xl font-semibold text-unisphere-darkBlue mb-3">Personalized Job Recommendations</h3>
               <p className="text-gray-600">
-                Our AI analyzes your skills and experience to recommend the most relevant job opportunities.
+                Let AI analyse your skills and experience to recommend the most relevant job opportunities.
               </p>
             </div>
             
@@ -75,9 +75,9 @@ const Index = () => {
               <div className="bg-unisphere-blue/10 p-3 rounded-full inline-block mb-4">
                 <Calendar className="text-unisphere-blue h-6 w-6" />
               </div>
-              <h3 className="text-xl font-semibold text-unisphere-darkBlue mb-3">Application Tracking</h3>
+              <h3 className="text-xl font-semibold text-unisphere-darkBlue mb-3">Job Application Tracking</h3>
               <p className="text-gray-600">
-                Easily track application deadlines, interviews, and follow-ups with our intuitive calendar.
+                Easily track application deadlines, interviews and follow-ups with our intuitive calendar.
               </p>
             </div>
             
@@ -85,9 +85,9 @@ const Index = () => {
               <div className="bg-unisphere-blue/10 p-3 rounded-full inline-block mb-4">
                 <CheckCircle className="text-unisphere-blue h-6 w-6" />
               </div>
-              <h3 className="text-xl font-semibold text-unisphere-darkBlue mb-3">Career Path Recommendations</h3>
+              <h3 className="text-xl font-semibold text-unisphere-darkBlue mb-3">Event Registration</h3>
               <p className="text-gray-600">
-                Discover potential career paths based on your strengths, interests, and educational background.
+                Register for academic-related events held by GECC UM.
               </p>
             </div>
             

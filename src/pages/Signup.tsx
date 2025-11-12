@@ -11,7 +11,7 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
 
-const Signup = () => {
+const Signup = () => { //details to fill in for signup
   const { toast } = useToast();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -43,7 +43,7 @@ const Signup = () => {
     e.preventDefault();
     
     // Simple validation
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.password !== formData.confirmPassword) { //to check if the passwords match
       toast({
         title: "Passwords don't match",
         description: "Please make sure both passwords match.",
@@ -52,7 +52,7 @@ const Signup = () => {
       return;
     }
     
-    if (formData.password.length < 8) {
+    if (formData.password.length < 8) { //set password length
       toast({
         title: "Password too short",
         description: "Password must be at least 8 characters long.",
@@ -70,17 +70,17 @@ const Signup = () => {
       return;
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true); //submit details
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(
+      const userCredential = await createUserWithEmailAndPassword( //for login later on
         auth,
         formData.email,
         formData.password
       );
       const user = userCredential.user;
 
-      // Store additional user info in Firestore
+      //store additional user info in Firestore (no password for security)
       await setDoc(doc(db, "users", user.uid), {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -97,7 +97,7 @@ const Signup = () => {
 
       toast({
         title: "Account created successfully!",
-        description: "Redirecting you to the dashboard.",
+        description: "Redirecting you to your dashboard.",
       });
       
       navigate("/dashboard");
@@ -142,7 +142,7 @@ const Signup = () => {
                     <Input
                       id="firstName"
                       name="firstName"
-                      placeholder="John"
+                      placeholder="Jane"
                       required
                       value={formData.firstName}
                       onChange={handleChange}
@@ -153,7 +153,7 @@ const Signup = () => {
                     <Input
                       id="lastName"
                       name="lastName"
-                      placeholder="Smith"
+                      placeholder="Doe"
                       required
                       value={formData.lastName}
                       onChange={handleChange}
@@ -166,7 +166,7 @@ const Signup = () => {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="janedoe@example.com"
                     required
                     value={formData.email}
                     onChange={handleChange}
@@ -177,7 +177,7 @@ const Signup = () => {
                   <Select onValueChange={handleStudyYearChange} required>
                     <SelectTrigger>
                       <SelectValue placeholder="Select your current study year" />
-                    </SelectTrigger>
+                    </SelectTrigger> 
                     <SelectContent>
                       <SelectItem value="first">First Year</SelectItem>
                       <SelectItem value="second">Second Year</SelectItem>

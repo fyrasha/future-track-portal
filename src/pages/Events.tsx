@@ -34,7 +34,7 @@ const Events = () => {
   const { data: registeredEventIds } = useQuery<string[]>({
     queryKey: ['myRegistrations', userId],
     queryFn: async () => {
-      if (!userId) return [];
+      if (!userId) return []; //store in db
       const q = query(collection(db, "eventRegistrations"), where("studentId", "==", userId));
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => doc.data().eventId);
@@ -48,7 +48,7 @@ const Events = () => {
       
       const eventRef = doc(db, "events", event.id);
 
-      // Check for existing registration again within transaction for safety
+      //check for existing registration again for safety
       const registrationQuery = query(collection(db, "eventRegistrations"), where("eventId", "==", event.id), where("studentId", "==", userId));
 
       await runTransaction(db, async (transaction) => {
@@ -137,7 +137,7 @@ const Events = () => {
         return <div className="text-center text-destructive py-10 md:col-span-3">Could not load events.</div>;
     }
 
-    // if no events are ongoing or upcoming
+    //if no events are ongoing or upcoming
     if (!events || events.length === 0) {
         return (
             <div className="text-center py-12 md:col-span-3">

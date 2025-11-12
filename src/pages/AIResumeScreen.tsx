@@ -22,7 +22,7 @@ import MainLayout from "@/components/MainLayout";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
 
-const mockFeedback = {
+const mockFeedback = { //dummy data
   score: 78,
   matchScore: 82,
   strengths: [
@@ -51,8 +51,8 @@ const AIResumeScreen = () => {
   const { toast } = useToast();
 
   const handleResumeUpload = () => {
-    // Mock resume upload
-    setUploadedResume("John_Doe_Resume.pdf");
+    //mock resume upload
+    setUploadedResume("Jane_Doe_Resume.pdf");
     toast({
       title: "Resume Uploaded",
       description: "Your resume has been successfully uploaded."
@@ -71,7 +71,7 @@ const AIResumeScreen = () => {
 
     setIsScanning(true);
     
-    // Simulate scanning process
+    //simulate scanning process
     setTimeout(() => {
       setIsScanning(false);
       setScanComplete(true);
@@ -168,10 +168,10 @@ const AIResumeScreen = () => {
                   <div className="animate-pulse mb-6">
                     <FileText className="h-16 w-16 mx-auto text-unisphere-blue" />
                   </div>
-                  <h2 className="text-xl font-medium mb-3 text-unisphere-darkBlue">Analyzing Resume</h2>
+                  <h2 className="text-xl font-medium mb-3 text-unisphere-darkBlue">Analysing Resume</h2>
                   <Progress value={65} className="max-w-xs mx-auto mb-6" />
                   <p className="text-gray-600 max-w-sm mx-auto">
-                    Our AI is analyzing your resume against the selected job requirements. This will just take a moment...
+                    Our AI is analysing your resume against the selected job requirements. This will just take a moment...
                   </p>
                 </CardContent>
               </Card>
@@ -304,7 +304,7 @@ const AIResumeScreen = () => {
               <Card className="h-full flex items-center justify-center">
                 <CardContent className="text-center py-20">
                   <FileText className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                  <h2 className="text-xl font-medium mb-2 text-gray-700">Ready to Analyze Your Resume</h2>
+                  <h2 className="text-xl font-medium mb-2 text-gray-700">Ready to Analyse Your Resume</h2>
                   <p className="text-gray-600 max-w-sm mx-auto mb-6">
                     Upload your resume and select a job position to get AI-powered feedback on how well your resume matches the job requirements.
                   </p>

@@ -55,37 +55,9 @@ const Jobs = () => {
     queryKey: ['jobs', 'visible', userRole, 'withCompanyStatus'],
     queryFn: async () => {
       const jobsCollection = collection(db, "jobs");
-      
-      let statusesToShow: ('Active' | 'Pending')[] = ['Active'];
-      if (userRole === 'admin') {
-        statusesToShow.push('Pending');
-      }
-
-      const jobsQuery = query(jobsCollection, where("status", "in", statusesToShow));
-      
-      const jobSnapshot = await getDocs(jobsQuery);
-      const jobs: Job[] = jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
-
-      if (jobs.length === 0) {
-        return [];
-      }
-
-      const companyIds = [...new Set(jobs.map(job => job.companyId).filter(Boolean))];
-
-      const employersMap = new Map<string, 'Verified' | 'Pending' | 'Rejected'>();
-      if (companyIds.length > 0) {
-        const employersCollection = collection(db, "employers");
-        const employersQuery = query(employersCollection, where(documentId(), 'in', companyIds));
-        const employerSnapshot = await getDocs(employersQuery);
-        employerSnapshot.forEach(doc => {
-          employersMap.set(doc.id, (doc.data() as { status: 'Verified' | 'Pending' | 'Rejected' }).status);
-        });
-      }
-
-      return jobs.map(job => ({
-        ...job,
-        isCompanyVerified: employersMap.get(job.companyId) === 'Verified',
-      }));
+      const q = query(jobsCollection, where("status", "in", ["Active", "Pending"]), orderBy("postedDate", "desc"));
+      const jobSnapshot = await getDocs(q);
+      return jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
     },
   });
   

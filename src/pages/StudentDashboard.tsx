@@ -4,32 +4,23 @@ import MainLayout from "@/components/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Briefcase, Trophy, Clock, MapPin, Users } from "lucide-react";
+import { Calendar, Briefcase, Trophy, Clock, MapPin, Users, TrendingUp } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, where, orderBy, Timestamp } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
-// Mock data for student activities
-const mockActivities = {
-  first: [
-    { id: 1, name: "University Orientation", type: "orientation", date: "2022-09-15", status: "completed" },
-    { id: 2, name: "Programming Workshop", type: "workshop", date: "2022-10-20", status: "completed" },
-    { id: 3, name: "Career Fair 2022", type: "career", date: "2022-11-15", status: "completed" }
-  ],
-  second: [
-    { id: 4, name: "Tech Symposium", type: "seminar", date: "2023-03-10", status: "completed" },
-    { id: 5, name: "Internship Application Workshop", type: "workshop", date: "2023-04-22", status: "completed" },
-    { id: 6, name: "Study Group Formation", type: "academic", date: "2023-05-15", status: "completed" }
-  ],
-  third: [
-    { id: 7, name: "Industry Visit - TechCorp", type: "visit", date: "2024-02-28", status: "completed" },
-    { id: 8, name: "Resume Building Workshop", type: "workshop", date: "2024-03-15", status: "completed" },
-    { id: 9, name: "Mock Interview Session", type: "interview", date: "2024-04-10", status: "completed" }
-  ],
-  final: [
-    { id: 10, name: "Final Year Project Presentation", type: "academic", date: "2025-01-20", status: "completed" },
-    { id: 11, name: "Job Application Bootcamp", type: "workshop", date: "2025-02-15", status: "completed" },
-    { id: 12, name: "Networking Event", type: "networking", date: "2025-03-05", status: "upcoming" },
-    { id: 13, name: "Graduate Job Fair", type: "career", date: "2025-04-12", status: "upcoming" }
-  ]
-};
+interface EventRegistration {
+  id: string;
+  eventId: string;
+  eventName: string;
+  eventDate: Timestamp;
+  registeredAt: Timestamp;
+  type?: string;
+  status?: string;
+}
 
 const getActivityIcon = (type: string) => {
   switch (type) {
@@ -54,13 +45,16 @@ const getStatusColor = (status: string) => {
 const StudentDashboard = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAuth = () => {
       const loggedIn = localStorage.getItem('userLoggedIn') === 'true';
       const role = localStorage.getItem('userRole');
+      const id = localStorage.getItem('userId');
       setIsLoggedIn(loggedIn);
       setUserRole(role);
+      setUserId(id);
     };
 
     checkAuth();
@@ -70,6 +64,45 @@ const StudentDashboard = () => {
       window.removeEventListener('storage', checkAuth);
     };
   }, []);
+
+  const { data: registrations, isLoading } = useQuery<EventRegistration[]>({
+    queryKey: ['studentRegistrations', userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      const q = query(
+        collection(db, "eventRegistrations"),
+        where("studentId", "==", userId),
+        orderBy("registeredAt", "desc")
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      } as EventRegistration));
+    },
+    enabled: !!userId,
+  });
+
+  const { data: events } = useQuery({
+    queryKey: ['allEvents'],
+    queryFn: async () => {
+      const eventsSnapshot = await getDocs(collection(db, "events"));
+      const eventsMap: { [key: string]: any } = {};
+      eventsSnapshot.docs.forEach(doc => {
+        eventsMap[doc.id] = doc.data();
+      });
+      return eventsMap;
+    },
+  });
+
+  const enrichedRegistrations = registrations?.map(reg => {
+    const event = events?.[reg.eventId];
+    return {
+      ...reg,
+      type: event?.type || 'event',
+      status: event?.date && event.date.toDate() < new Date() ? 'completed' : 'upcoming'
+    };
+  }) || [];
 
   if (!isLoggedIn || userRole !== 'student') {
     return (
@@ -88,9 +121,49 @@ const StudentDashboard = () => {
     );
   }
 
-  const totalActivities = Object.values(mockActivities).flat().length;
-  const completedActivities = Object.values(mockActivities).flat().filter(a => a.status === 'completed').length;
-  const upcomingActivities = Object.values(mockActivities).flat().filter(a => a.status === 'upcoming').length;
+  const totalActivities = enrichedRegistrations.length;
+  const completedActivities = enrichedRegistrations.filter(a => a.status === 'completed').length;
+  const upcomingActivities = enrichedRegistrations.filter(a => a.status === 'upcoming').length;
+
+  // Chart data for activity types
+  const activityTypeData = enrichedRegistrations.reduce((acc: any[], reg) => {
+    const existing = acc.find(item => item.type === reg.type);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      acc.push({ type: reg.type || 'event', count: 1 });
+    }
+    return acc;
+  }, []);
+
+  // Chart data for monthly registrations
+  const monthlyData = enrichedRegistrations.reduce((acc: any[], reg) => {
+    const month = reg.registeredAt.toDate().toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+    const existing = acc.find(item => item.month === month);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      acc.push({ month, count: 1 });
+    }
+    return acc;
+  }, []).slice(-6);
+
+  const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto py-8 px-4">
+          <Skeleton className="h-10 w-64 mb-4" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -139,70 +212,105 @@ const StudentDashboard = () => {
           </Card>
         </div>
 
-        {/* Activities by Year */}
+        {/* Visualizations */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Activity by Type
+              </CardTitle>
+              <CardDescription>Distribution of your registered events</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {activityTypeData.length > 0 ? (
+                <ChartContainer config={{}} className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={activityTypeData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ type, percent }) => `${type}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="count"
+                      >
+                        {activityTypeData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  No activity data yet
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Registration Trend
+              </CardTitle>
+              <CardDescription>Your event registrations over time</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {monthlyData.length > 0 ? (
+                <ChartContainer config={{}} className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  No registration data yet
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Activities List */}
         <Tabs defaultValue="all" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="all">All Years</TabsTrigger>
-            <TabsTrigger value="first">First Year</TabsTrigger>
-            <TabsTrigger value="second">Second Year</TabsTrigger>
-            <TabsTrigger value="third">Third Year</TabsTrigger>
-            <TabsTrigger value="final">Final Year</TabsTrigger>
+          <TabsList>
+            <TabsTrigger value="all">All Events</TabsTrigger>
+            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+            <TabsTrigger value="completed">Completed</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all">
-            <div className="space-y-6">
-              {Object.entries(mockActivities).map(([year, activities]) => (
-                <Card key={year}>
-                  <CardHeader>
-                    <CardTitle className="capitalize">{year} Year Activities</CardTitle>
-                    <CardDescription>{activities.length} activities</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {activities.map((activity) => (
-                        <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <div className="flex items-center justify-center w-8 h-8 bg-unisphere-blue/10 rounded-full">
-                              {getActivityIcon(activity.type)}
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-gray-900">{activity.name}</h4>
-                              <p className="text-sm text-gray-600">
-                                {new Date(activity.date).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          <Badge className={getStatusColor(activity.status)}>
-                            {activity.status}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          {Object.entries(mockActivities).map(([year, activities]) => (
-            <TabsContent key={year} value={year}>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="capitalize">{year} Year Activities</CardTitle>
-                  <CardDescription>{activities.length} activities during this academic year</CardDescription>
-                </CardHeader>
-                <CardContent>
+            <Card>
+              <CardHeader>
+                <CardTitle>All Registered Events</CardTitle>
+                <CardDescription>{enrichedRegistrations.length} total registrations</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {enrichedRegistrations.length > 0 ? (
                   <div className="space-y-3">
-                    {activities.map((activity) => (
-                      <div key={activity.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    {enrichedRegistrations.map((activity) => (
+                      <div key={activity.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                         <div className="flex items-center space-x-4">
-                          <div className="flex items-center justify-center w-10 h-10 bg-unisphere-blue/10 rounded-full">
+                          <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
                             {getActivityIcon(activity.type)}
                           </div>
                           <div>
-                            <h4 className="font-semibold text-gray-900">{activity.name}</h4>
-                            <p className="text-sm text-gray-600 capitalize">
-                              {activity.type} • {new Date(activity.date).toLocaleDateString()}
+                            <h4 className="font-semibold">{activity.eventName}</h4>
+                            <p className="text-sm text-muted-foreground capitalize">
+                              {activity.type} • {activity.eventDate.toDate().toLocaleDateString()}
                             </p>
                           </div>
                         </div>
@@ -212,10 +320,91 @@ const StudentDashboard = () => {
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          ))}
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No event registrations yet. Visit the Events page to register!</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="upcoming">
+            <Card>
+              <CardHeader>
+                <CardTitle>Upcoming Events</CardTitle>
+                <CardDescription>{upcomingActivities} events</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {enrichedRegistrations.filter(a => a.status === 'upcoming').length > 0 ? (
+                  <div className="space-y-3">
+                    {enrichedRegistrations.filter(a => a.status === 'upcoming').map((activity) => (
+                      <div key={activity.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
+                            {getActivityIcon(activity.type)}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold">{activity.eventName}</h4>
+                            <p className="text-sm text-muted-foreground capitalize">
+                              {activity.type} • {activity.eventDate.toDate().toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge className={getStatusColor(activity.status)}>
+                          {activity.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No upcoming events</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="completed">
+            <Card>
+              <CardHeader>
+                <CardTitle>Completed Events</CardTitle>
+                <CardDescription>{completedActivities} events</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {enrichedRegistrations.filter(a => a.status === 'completed').length > 0 ? (
+                  <div className="space-y-3">
+                    {enrichedRegistrations.filter(a => a.status === 'completed').map((activity) => (
+                      <div key={activity.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
+                            {getActivityIcon(activity.type)}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold">{activity.eventName}</h4>
+                            <p className="text-sm text-muted-foreground capitalize">
+                              {activity.type} • {activity.eventDate.toDate().toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge className={getStatusColor(activity.status)}>
+                          {activity.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No completed events yet</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </MainLayout>

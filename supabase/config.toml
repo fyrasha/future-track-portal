@@ -1,0 +1,13 @@
+project_id = "dtttzpujysqjshyjcpun"
+
+[functions.analyze-resume]
+verify_jwt = false
+
+[functions.parse-resume]
+verify_jwt = false
+
+[functions.chat]
+verify_jwt = false
+
+[functions.generate-career-recommendations]
+verify_jwt = false

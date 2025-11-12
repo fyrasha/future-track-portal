@@ -71,29 +71,6 @@ const AdminJobManagement = () => {
 
   const addJobMutation = useMutation({
     mutationFn: async (newJob: JobFormValues) => {
-      const employersCollection = collection(db, "employers");
-      //the field in 'employers' collection for the company name is 'companyName'
-      const q = query(employersCollection, where("companyName", "==", newJob.company));
-      const companySnapshot = await getDocs(q);
-
-      let companyId: string;
-
-      if (companySnapshot.empty) {
-        //employer not found, so create a new one with 'Pending' status for review
-        console.log(`Employer "${newJob.company}" not found. Creating a new entry with 'Pending' status.`);
-        const newEmployerRef = await addDoc(collection(db, "employers"), {
-            companyName: newJob.company,
-            // A placeholder email is used as it's not available in the job creation form
-            email: `${newJob.company.toLowerCase().replace(/\s+/g, '.')}@unisphere.com`,
-            status: 'Pending',
-            createdAt: serverTimestamp(),
-        });
-        companyId = newEmployerRef.id;
-        toast.info(`New employer "${newJob.company}" created and is pending review.`);
-      } else {
-        companyId = companySnapshot.docs[0].id;
-      }
-      
       return await addDoc(collection(db, "jobs"), {
         ...newJob,
         companyId,
@@ -109,7 +86,6 @@ const AdminJobManagement = () => {
         const optimisticJob: Job = {
           id: `temp-${Date.now()}`,
           ...newJob,
-          companyId: `optimistic-id-${Date.now()}`, //placeholder for optimistic update
           postedDate: Timestamp.now(),
           deadline: Timestamp.fromDate(newJob.deadline),
           applications: 0,

@@ -1,4 +1,5 @@
-import { useParams } from "react-router-dom";
+import { useState } from "react";
+import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
@@ -6,8 +7,10 @@ import MainLayout from "@/components/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, DollarSign, Users, Building } from "lucide-react";
+import { MapPin, Calendar, DollarSign, Users, Building, Briefcase } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import JobApplicationDialog from "@/components/JobApplicationDialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface Job {
   id: string;
@@ -32,16 +35,35 @@ interface Company {
 
 const CompanyDetails = () => {
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [applicationDialogOpen, setApplicationDialogOpen] = useState(false);
+  
+  const [isLoggedIn] = useState(() => {
+    return localStorage.getItem('userLoggedIn') === 'true';
+  });
+
+  const applyForJob = (job: Job) => {
+    if (!isLoggedIn) {
+      toast({
+        title: "Login Required",
+        description: "Please login as a student to apply for jobs.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setSelectedJob(job);
+    setApplicationDialogOpen(true);
+  };
 
   const { data: jobs, isLoading: jobsLoading } = useQuery({
     queryKey: ['company-jobs', id],
     queryFn: async () => {
       if (!id) return [];
-      console.log("Fetching jobs for company:", id);
       const jobsCollection = collection(db, "jobs");
       const q = query(
         jobsCollection, 
-        where("company", "==", id),
+        where("companyId", "==", id),
         orderBy("postedDate", "desc")
       );
       
@@ -51,7 +73,6 @@ const CompanyDetails = () => {
         ...doc.data()
       } as Job));
       
-      console.log("Found jobs for company:", jobsList);
       return jobsList;
     },
     enabled: !!id
@@ -144,7 +165,21 @@ const CompanyDetails = () => {
                         <Badge variant="secondary">{job.type}</Badge>
                       </div>
                       <p className="text-gray-600 text-sm mb-3 line-clamp-2">{job.description}</p>
-                      <Button size="sm">View Details</Button>
+                      <div className="flex gap-2">
+                        <Link to="/jobs">
+                          <Button variant="outline" size="sm">
+                            <Briefcase className="mr-1 h-3 w-3" />
+                            All Jobs
+                          </Button>
+                        </Link>
+                        <Button 
+                          size="sm" 
+                          onClick={() => applyForJob(job)}
+                          className="bg-blue-500 hover:bg-blue-600 text-white"
+                        >
+                          Apply Now
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -158,6 +193,20 @@ const CompanyDetails = () => {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Application Dialog */}
+        {selectedJob && (
+          <JobApplicationDialog 
+            job={{
+              id: selectedJob.id,
+              title: selectedJob.title,
+              company: selectedJob.company,
+              location: selectedJob.location,
+            }}
+            open={applicationDialogOpen}
+            onOpenChange={setApplicationDialogOpen}
+          />
+        )}
       </div>
     </MainLayout>
   );

@@ -124,6 +124,7 @@ const StudentDashboard = () => {
   const totalActivities = enrichedRegistrations.length;
   const completedActivities = enrichedRegistrations.filter(a => a.status === 'completed').length;
   const upcomingActivities = enrichedRegistrations.filter(a => a.status === 'upcoming').length;
+  const completionRate = totalActivities > 0 ? Math.round((completedActivities / totalActivities) * 100) : 0;
 
   // Chart data for activity types
   const activityTypeData = enrichedRegistrations.reduce((acc: any[], reg) => {
@@ -174,40 +175,56 @@ const StudentDashboard = () => {
         </div>
 
         {/* Overview Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Activities</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Activities</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 text-unisphere-blue" />
-                <div className="text-2xl font-bold">{totalActivities}</div>
+              <div className="flex items-center justify-between">
+                <div className="text-3xl font-bold text-primary">{totalActivities}</div>
+                <Calendar className="h-8 w-8 text-primary/20" />
               </div>
+              <p className="text-xs text-muted-foreground mt-2">All registered events</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-green-500">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Completed</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center space-x-2">
-                <Trophy className="h-4 w-4 text-green-600" />
-                <div className="text-2xl font-bold text-green-600">{completedActivities}</div>
+              <div className="flex items-center justify-between">
+                <div className="text-3xl font-bold text-green-600">{completedActivities}</div>
+                <Trophy className="h-8 w-8 text-green-500/20" />
               </div>
+              <p className="text-xs text-muted-foreground mt-2">{completionRate}% completion rate</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-blue-500">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Upcoming</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4 text-blue-600" />
-                <div className="text-2xl font-bold text-blue-600">{upcomingActivities}</div>
+              <div className="flex items-center justify-between">
+                <div className="text-3xl font-bold text-blue-600">{upcomingActivities}</div>
+                <Clock className="h-8 w-8 text-blue-500/20" />
               </div>
+              <p className="text-xs text-muted-foreground mt-2">Events to attend</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-background">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Progress</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="text-3xl font-bold text-purple-600">{completionRate}%</div>
+                <TrendingUp className="h-8 w-8 text-purple-500/20" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Overall completion</p>
             </CardContent>
           </Card>
         </div>

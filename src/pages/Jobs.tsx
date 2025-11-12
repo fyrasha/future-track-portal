@@ -56,10 +56,8 @@ const Jobs = () => {
     queryFn: async () => {
       const jobsCollection = collection(db, "jobs");
       
-      let statusesToShow: ('Active' | 'Pending')[] = ['Active'];
-      if (userRole === 'admin') {
-        statusesToShow.push('Pending');
-      }
+      // Show both Active and Pending jobs to all users
+      const statusesToShow: ('Active' | 'Pending')[] = ['Active', 'Pending'];
 
       const jobsQuery = query(jobsCollection, where("status", "in", statusesToShow), orderBy("postedDate", "desc"));
       

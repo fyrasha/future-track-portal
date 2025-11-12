@@ -56,13 +56,19 @@ const Jobs = () => {
     queryFn: async () => {
       const jobsCollection = collection(db, "jobs");
       
-      // Show both Active and Pending jobs to all users
-      const statusesToShow: ('Active' | 'Pending')[] = ['Active', 'Pending'];
-
-      const jobsQuery = query(jobsCollection, where("status", "in", statusesToShow), orderBy("postedDate", "desc"));
+      // Fetch Active and Pending jobs separately to avoid composite index requirement
+      const activeQuery = query(jobsCollection, where("status", "==", "Active"));
+      const pendingQuery = query(jobsCollection, where("status", "==", "Pending"));
       
-      const jobSnapshot = await getDocs(jobsQuery);
-      const jobs: Job[] = jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
+      const [activeSnapshot, pendingSnapshot] = await Promise.all([
+        getDocs(activeQuery),
+        getDocs(pendingQuery)
+      ]);
+      
+      const jobs: Job[] = [
+        ...activeSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id })),
+        ...pendingSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }))
+      ].sort((a, b) => b.postedDate.toMillis() - a.postedDate.toMillis());
 
       if (jobs.length === 0) {
         return [];

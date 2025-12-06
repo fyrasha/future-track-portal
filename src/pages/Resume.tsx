@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
 import ResumeBuilder from "@/components/resume/ResumeBuilder";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { db, auth } from "@/lib/firebase";
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc } from "firebase/firestore";
 import { supabase } from "@/integrations/supabase/client";

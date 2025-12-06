@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { db, auth } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { supabase } from "@/integrations/supabase/client";

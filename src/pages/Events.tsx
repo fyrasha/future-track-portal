@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, MapPin, Users, Briefcase } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where, orderBy, doc, runTransaction, Timestamp, increment } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, runTransaction, Timestamp, increment } from 'firebase/firestore';
 import { Event } from '@/types/event';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useState, useEffect } from 'react';
@@ -38,9 +38,12 @@ const Events = () => {
     queryKey: ['events', 'public'],
     queryFn: async () => {
         const eventsCollection = collection(db, "events");
-        const q = query(eventsCollection, where("status", "in", ["upcoming", "ongoing"]), orderBy("date", "asc"));
+        // Simple query without orderBy to avoid composite index requirement
+        const q = query(eventsCollection, where("status", "in", ["upcoming", "ongoing"]));
         const eventSnapshot = await getDocs(q);
-        return eventSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Event, 'id'>), id: doc.id }));
+        const eventsData = eventSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Event, 'id'>), id: doc.id }));
+        // Sort client-side by date ascending
+        return eventsData.sort((a, b) => a.date.toMillis() - b.date.toMillis());
     }
   });
 

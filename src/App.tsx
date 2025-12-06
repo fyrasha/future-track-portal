@@ -27,6 +27,7 @@ import CompanyDetails from "./pages/CompanyDetails";
 import NotFound from "./pages/NotFound";
 import AdminJobManagement from "./pages/AdminJobManagement";
 import AdminEmployerReview from "./pages/AdminEmployerReview";
+import EmployerPostJob from "./pages/EmployerPostJob";
 
 // Create a client outside of the component
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/jobs/:id" element={<Jobs />} />
             <Route path="/company/:id" element={<CompanyDetails />} />
+            <Route path="/employer/post-job" element={<EmployerPostJob />} />
             <Route path="/resume" element={<Resume />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/events" element={<Events />} />

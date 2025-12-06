@@ -24,7 +24,8 @@ import {
   Calendar, 
   Star,
   CheckCircle2,
-  Clock
+  Clock,
+  PlusCircle
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import { useToast } from "@/hooks/use-toast";
@@ -122,7 +123,13 @@ const Jobs = () => {
       <div className="container mx-auto py-8 px-4">
         <div className="flex flex-col md:flex-row justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-4 md:mb-0">Job Listings</h1>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3 justify-center">
+            <Link to="/employer/post-job">
+              <Button className="bg-green-600 hover:bg-green-700 text-white">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Post a Job
+              </Button>
+            </Link>
             <Link to="/applications">
               <Button className="bg-blue-500 hover:bg-blue-600 text-white">
                 <Briefcase className="mr-2 h-4 w-4" />

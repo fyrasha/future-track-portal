@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartTooltip } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 interface EventRegistration {
@@ -128,13 +128,13 @@ const StudentDashboard = () => {
   const upcomingActivities = enrichedRegistrations.filter(a => a.status === 'upcoming').length;
   const completionRate = totalActivities > 0 ? Math.round((completedActivities / totalActivities) * 100) : 0;
 
-  // Chart data for activity types
+  // Chart data for activity types with colors
   const activityTypeData = enrichedRegistrations.reduce((acc: any[], reg) => {
     const existing = acc.find(item => item.type === reg.type);
     if (existing) {
       existing.count += 1;
     } else {
-      acc.push({ type: reg.type || 'event', count: 1 });
+      acc.push({ type: reg.type || 'event', count: 1, name: reg.type || 'event' });
     }
     return acc;
   }, []);
@@ -151,7 +151,7 @@ const StudentDashboard = () => {
     return acc;
   }, []).slice(-6);
 
-  const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+  const COLORS = ['#8B5CF6', '#F97316', '#10B981', '#3B82F6', '#EC4899', '#F59E0B'];
 
   if (isLoading) {
     return (
@@ -233,70 +233,134 @@ const StudentDashboard = () => {
 
         {/* Visualizations */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
+          <Card className="shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="p-2 rounded-full bg-purple-100">
+                  <TrendingUp className="h-4 w-4 text-purple-600" />
+                </div>
                 Activity by Type
               </CardTitle>
               <CardDescription>Distribution of your registered events</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               {activityTypeData.length > 0 ? (
-                <ChartContainer config={{}} className="h-[300px]">
+                <div className="h-[280px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={activityTypeData}
                         cx="50%"
                         cy="50%"
-                        labelLine={false}
-                        label={({ type, percent }) => `${type}: ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
+                        innerRadius={50}
+                        outerRadius={90}
+                        paddingAngle={4}
                         dataKey="count"
+                        nameKey="type"
+                        label={({ type, percent }) => `${type}: ${(percent * 100).toFixed(0)}%`}
+                        labelLine={{ stroke: '#888', strokeWidth: 1 }}
                       >
                         {activityTypeData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={COLORS[index % COLORS.length]} 
+                            stroke="white"
+                            strokeWidth={2}
+                          />
                         ))}
                       </Pie>
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Legend />
+                      <ChartTooltip 
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-background border rounded-lg shadow-lg p-3">
+                                <p className="font-medium capitalize">{payload[0].name}</p>
+                                <p className="text-sm text-muted-foreground">{payload[0].value} events</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Legend 
+                        formatter={(value) => <span className="capitalize text-sm">{value}</span>}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
-                </ChartContainer>
+                </div>
               ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  No activity data yet
+                <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <TrendingUp className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                    <p>No activity data yet</p>
+                  </div>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
+          <Card className="shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="p-2 rounded-full bg-blue-100">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                </div>
                 Registration Trend
               </CardTitle>
               <CardDescription>Your event registrations over time</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               {monthlyData.length > 0 ? (
-                <ChartContainer config={{}} className="h-[300px]">
+                <div className="h-[280px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                    <BarChart data={monthlyData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+                      <defs>
+                        <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#3B82F6" stopOpacity={1} />
+                          <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0.8} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                      <XAxis 
+                        dataKey="month" 
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                      />
+                      <YAxis 
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                        allowDecimals={false}
+                      />
+                      <ChartTooltip 
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-background border rounded-lg shadow-lg p-3">
+                                <p className="font-medium">{label}</p>
+                                <p className="text-sm text-muted-foreground">{payload[0].value} registrations</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Bar 
+                        dataKey="count" 
+                        fill="url(#barGradient)" 
+                        radius={[8, 8, 0, 0]}
+                        maxBarSize={50}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
-                </ChartContainer>
+                </div>
               ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  No registration data yet
+                <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Calendar className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                    <p>No registration data yet</p>
+                  </div>
                 </div>
               )}
             </CardContent>

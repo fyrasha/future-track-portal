@@ -94,6 +94,7 @@ const Events = () => {
       toast({ title: "Registration Successful", description: "You are now registered for the event." });
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['myRegistrations', userId] });
+      queryClient.invalidateQueries({ queryKey: ['studentRegistrations', userId] });
     },
     onError: (error: Error) => {
       toast({ title: "Registration Failed", description: error.message, variant: "destructive" });

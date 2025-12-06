@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Briefcase, Trophy, Clock, MapPin, Users, TrendingUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where, orderBy, Timestamp } from "firebase/firestore";
+import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
@@ -69,16 +69,18 @@ const StudentDashboard = () => {
     queryKey: ['studentRegistrations', userId],
     queryFn: async () => {
       if (!userId) return [];
+      // Simple query without orderBy to avoid composite index requirement
       const q = query(
         collection(db, "eventRegistrations"),
-        where("studentId", "==", userId),
-        orderBy("registeredAt", "desc")
+        where("studentId", "==", userId)
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ 
+      const regs = snapshot.docs.map(doc => ({ 
         id: doc.id, 
         ...doc.data() 
       } as EventRegistration));
+      // Sort client-side by registeredAt descending
+      return regs.sort((a, b) => b.registeredAt.toMillis() - a.registeredAt.toMillis());
     },
     enabled: !!userId,
   });

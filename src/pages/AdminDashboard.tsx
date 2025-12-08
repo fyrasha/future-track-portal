@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayout from "@/components/MainLayout";
 import { 
   Card, 
@@ -23,9 +22,8 @@ import {
   Building, 
   Briefcase, 
   TrendingUp, 
-  CheckCircle,
-  XCircle,
-  Calendar
+  Calendar,
+  Loader2
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -48,91 +46,203 @@ import {
   Line,
   ResponsiveContainer
 } from "recharts";
-
-// Mock data
-const analyticsData = {
-  totalStudents: 1250,
-  activeStudents: 892,
-  inactiveStudents: 358,
-  totalJobs: 45,
-  totalCompanies: 23
-};
-
-const studentActivityData = [
-  { month: "Jan", active: 820, inactive: 430 },
-  { month: "Feb", active: 845, inactive: 405 },
-  { month: "Mar", active: 867, inactive: 383 },
-  { month: "Apr", active: 878, inactive: 372 },
-  { month: "May", active: 885, inactive: 365 },
-  { month: "Jun", active: 892, inactive: 358 }
-];
-
-const jobApplicationsData = [
-  { company: "TechCorp", applications: 145 },
-  { company: "Analytics Pro", applications: 89 },
-  { company: "Creative Solutions", applications: 67 },
-  { company: "Brand Masters", applications: 54 },
-  { company: "Global Finance", applications: 43 }
-];
-
-const studentStatusData = [
-  { name: "Active", value: 892, color: "#10b981" },
-  { name: "Inactive", value: 358, color: "#ef4444" }
-];
-
-const monthlyJobPostings = [
-  { month: "Jan", jobs: 35 },
-  { month: "Feb", jobs: 42 },
-  { month: "Mar", jobs: 38 },
-  { month: "Apr", jobs: 45 },
-  { month: "May", jobs: 41 },
-  { month: "Jun", jobs: 45 }
-];
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot, query, where, Timestamp } from "firebase/firestore";
 
 const chartConfig = {
   active: {
     label: "Active Students",
-    color: "#10b981",
+    color: "hsl(142, 76%, 36%)",
   },
   inactive: {
     label: "Inactive Students", 
-    color: "#ef4444",
+    color: "hsl(0, 84%, 60%)",
   },
   applications: {
     label: "Applications",
-    color: "#3b82f6",
+    color: "hsl(217, 91%, 60%)",
   },
   jobs: {
     label: "Job Postings",
-    color: "#8b5cf6",
+    color: "hsl(262, 83%, 58%)",
+  },
+  pending: {
+    label: "Pending Jobs",
+    color: "hsl(38, 92%, 50%)",
   }
 };
 
-const inactiveStudents = [
-  { id: 1, name: "Ahmad Rahman", email: "ahmad@student.edu", lastActivity: "Career Fair 2024", lastActivityDate: "2024-11-15", status: "Inactive" },
-  { id: 2, name: "Siti Nurhaliza", email: "siti@student.edu", lastActivity: "Resume Workshop", lastActivityDate: "2024-10-20", status: "Inactive" },
-  { id: 3, name: "Raj Kumar", email: "raj@student.edu", lastActivity: "Tech Symposium", lastActivityDate: "2024-09-25", status: "Inactive" }
-];
+interface Student {
+  id: string;
+  name?: string;
+  email: string;
+  lastActivity?: string;
+  lastActivityDate?: any;
+  createdAt?: any;
+}
 
-const topCompanies = [
-  { id: 1, name: "TechCorp Malaysia", applications: 145, hires: 23 },
-  { id: 2, name: "Analytics Pro", applications: 89, hires: 15 },
-  { id: 3, name: "Creative Solutions", applications: 67, hires: 12 }
-];
+interface Job {
+  id: string;
+  title: string;
+  company: string;
+  status: string;
+  postedDate?: any;
+}
 
-const jobListings = [
-  { id: 1, title: "Software Engineer Intern", company: "TechCorp Malaysia", status: "Active", applications: 23, postedDate: "2025-06-01" },
-  { id: 2, title: "Data Analyst", company: "Analytics Pro", status: "Active", applications: 18, postedDate: "2025-06-05" },
-  { id: 3, title: "Marketing Assistant", company: "Brand Masters", status: "Pending", applications: 8, postedDate: "2025-06-10" }
-];
+interface Application {
+  id: string;
+  jobId: string;
+  userId: string;
+  appliedAt?: any;
+  company?: string;
+}
+
+interface EventRegistration {
+  id: string;
+  userId: string;
+  registeredAt?: any;
+}
 
 const AdminDashboard = () => {
+  const [loading, setLoading] = useState(true);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [eventRegistrations, setEventRegistrations] = useState<EventRegistration[]>([]);
+
+  // Real-time listeners
+  useEffect(() => {
+    const unsubscribers: (() => void)[] = [];
+
+    // Listen to users (students)
+    const usersRef = collection(db, "users");
+    const unsubUsers = onSnapshot(usersRef, (snapshot) => {
+      const usersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Student[];
+      setStudents(usersData);
+      setLoading(false);
+    });
+    unsubscribers.push(unsubUsers);
+
+    // Listen to jobs
+    const jobsRef = collection(db, "jobs");
+    const unsubJobs = onSnapshot(jobsRef, (snapshot) => {
+      const jobsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Job[];
+      setJobs(jobsData);
+    });
+    unsubscribers.push(unsubJobs);
+
+    // Listen to applications
+    const appsRef = collection(db, "applications");
+    const unsubApps = onSnapshot(appsRef, (snapshot) => {
+      const appsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Application[];
+      setApplications(appsData);
+    });
+    unsubscribers.push(unsubApps);
+
+    // Listen to event registrations
+    const regsRef = collection(db, "eventRegistrations");
+    const unsubRegs = onSnapshot(regsRef, (snapshot) => {
+      const regsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as EventRegistration[];
+      setEventRegistrations(regsData);
+    });
+    unsubscribers.push(unsubRegs);
+
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
+  }, []);
+
+  // Calculate analytics
+  const totalStudents = students.length;
+  
+  // Active students = students who have applied or registered for events
+  const activeStudentIds = new Set([
+    ...applications.map(app => app.userId),
+    ...eventRegistrations.map(reg => reg.userId)
+  ]);
+  const activeStudents = activeStudentIds.size;
+  const inactiveStudents = Math.max(0, totalStudents - activeStudents);
+
+  const totalJobs = jobs.length;
+  const activeJobs = jobs.filter(job => job.status === "Active").length;
+  const pendingJobs = jobs.filter(job => job.status === "Pending").length;
+  
+  // Unique companies from jobs
+  const uniqueCompanies = new Set(jobs.map(job => job.company));
+  const totalCompanies = uniqueCompanies.size;
+
+  // Student status data for pie chart
+  const studentStatusData = [
+    { name: "Active", value: activeStudents, color: "hsl(142, 76%, 36%)" },
+    { name: "Inactive", value: inactiveStudents, color: "hsl(0, 84%, 60%)" }
+  ];
+
+  // Job status data for pie chart
+  const jobStatusData = [
+    { name: "Active", value: activeJobs, color: "hsl(142, 76%, 36%)" },
+    { name: "Pending", value: pendingJobs, color: "hsl(38, 92%, 50%)" }
+  ];
+
+  // Applications by company
+  const appsByCompany = jobs.reduce((acc, job) => {
+    const jobApps = applications.filter(app => app.jobId === job.id).length;
+    if (jobApps > 0) {
+      const existing = acc.find(item => item.company === job.company);
+      if (existing) {
+        existing.applications += jobApps;
+      } else {
+        acc.push({ company: job.company, applications: jobApps });
+      }
+    }
+    return acc;
+  }, [] as { company: string; applications: number }[]);
+  
+  const topCompaniesData = appsByCompany
+    .sort((a, b) => b.applications - a.applications)
+    .slice(0, 5);
+
+  // Inactive students list (students with no applications or registrations)
+  const inactiveStudentsList = students
+    .filter(student => !activeStudentIds.has(student.id))
+    .slice(0, 5);
+
+  // Recent jobs
+  const recentJobs = [...jobs]
+    .sort((a, b) => {
+      const dateA = a.postedDate?.toDate?.() || new Date(0);
+      const dateB = b.postedDate?.toDate?.() || new Date(0);
+      return dateB.getTime() - dateA.getTime();
+    })
+    .slice(0, 5);
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto py-8 px-4 flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="container mx-auto py-8 px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-2">Admin Dashboard</h1>
-          <p className="text-gray-600">Analytics and insights for student activity and job management</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Admin Dashboard</h1>
+          <p className="text-muted-foreground">Real-time analytics and insights</p>
         </div>
 
         <Tabs defaultValue="student-activity" className="space-y-6">
@@ -146,85 +256,180 @@ const AdminDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center space-x-2">
-                    <Users className="h-4 w-4 text-unisphere-blue" />
-                    <div className="text-2xl font-bold">{analyticsData.totalStudents}</div>
+                    <Users className="h-5 w-5 text-primary" />
+                    <div className="text-3xl font-bold">{totalStudents}</div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-green-500">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Active Students</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-2">
+                    <TrendingUp className="h-5 w-5 text-green-500" />
+                    <div className="text-3xl font-bold text-green-600">{activeStudents}</div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Applied or registered for events</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-red-500">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Inactive Students</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-2">
+                    <Users className="h-5 w-5 text-red-500" />
+                    <div className="text-3xl font-bold text-red-600">{inactiveStudents}</div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">No recent activity</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Student Activity Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Student Status Distribution</CardTitle>
+                <CardDescription>Current active vs inactive breakdown</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={studentStatusData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                        label={({ name, value, percent }) => 
+                          value > 0 ? `${name}: ${value} (${(percent * 100).toFixed(0)}%)` : null
+                        }
+                      >
+                        {studentStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            {/* Inactive Students Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Students with No Activity</CardTitle>
+                <CardDescription>Students who haven't applied to jobs or registered for events</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {inactiveStudentsList.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Student</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {inactiveStudentsList.map((student) => (
+                        <TableRow key={student.id}>
+                          <TableCell className="font-medium">
+                            {student.name || "No name"}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {student.email}
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="outline" size="sm">
+                              Contact
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-muted-foreground text-center py-4">All students are active!</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="jobs-companies" className="space-y-6">
+            {/* Jobs & Companies Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Jobs</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-2">
+                    <Briefcase className="h-5 w-5 text-primary" />
+                    <div className="text-3xl font-bold">{totalJobs}</div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Active Students</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Companies</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center space-x-2">
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                    <div className="text-2xl font-bold text-green-600">{analyticsData.activeStudents}</div>
+                    <Building className="h-5 w-5 text-primary" />
+                    <div className="text-3xl font-bold">{totalCompanies}</div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Inactive Students</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Applications</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center space-x-2">
-                    <Users className="h-4 w-4 text-red-600" />
-                    <div className="text-2xl font-bold text-red-600">{analyticsData.inactiveStudents}</div>
+                    <Calendar className="h-5 w-5 text-primary" />
+                    <div className="text-3xl font-bold">{applications.length}</div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Student Activity Charts */}
+            {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Job Status Pie Chart */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Student Activity Trend</CardTitle>
-                  <CardDescription>Monthly active vs inactive students</CardDescription>
+                  <CardTitle>Job Status Distribution</CardTitle>
+                  <CardDescription>Active vs pending job postings</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer config={chartConfig} className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={studentActivityData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <ChartLegend content={<ChartLegendContent />} />
-                        <Bar dataKey="active" fill="var(--color-active)" name="Active Students" />
-                        <Bar dataKey="inactive" fill="var(--color-inactive)" name="Inactive Students" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Student Status Distribution</CardTitle>
-                  <CardDescription>Current active vs inactive breakdown</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer config={chartConfig} className="h-[300px]">
+                  <ChartContainer config={chartConfig} className="h-[250px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
-                          data={studentStatusData}
+                          data={jobStatusData}
                           cx="50%"
                           cy="50%"
-                          innerRadius={60}
-                          outerRadius={100}
+                          innerRadius={50}
+                          outerRadius={80}
                           paddingAngle={5}
                           dataKey="value"
-                          label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                          label={({ name, value }) => value > 0 ? `${name}: ${value}` : null}
                         >
-                          {studentStatusData.map((entry, index) => (
+                          {jobStatusData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
@@ -234,181 +439,114 @@ const AdminDashboard = () => {
                   </ChartContainer>
                 </CardContent>
               </Card>
-            </div>
 
-            {/* Inactive Students Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Students with Low Activity</CardTitle>
-                <CardDescription>Students who haven't participated in recent activities</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Student</TableHead>
-                      <TableHead>Last Activity</TableHead>
-                      <TableHead>Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {inactiveStudents.map((student) => (
-                      <TableRow key={student.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{student.name}</div>
-                            <div className="text-sm text-gray-500">{student.email}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{student.lastActivity}</div>
-                            <div className="text-sm text-gray-500">{new Date(student.lastActivityDate).toLocaleDateString()}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm">
-                            Contact
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="jobs-companies" className="space-y-6">
-            {/* Jobs & Companies Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center space-x-2">
-                    <Briefcase className="h-4 w-4 text-unisphere-blue" />
-                    <div className="text-2xl font-bold">{analyticsData.totalJobs}</div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Companies</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center space-x-2">
-                    <Building className="h-4 w-4 text-unisphere-blue" />
-                    <div className="text-2xl font-bold">{analyticsData.totalCompanies}</div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Jobs & Companies Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Applications by Company */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Job Applications by Company</CardTitle>
+                  <CardTitle>Applications by Company</CardTitle>
                   <CardDescription>Top companies by application volume</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer config={chartConfig} className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={jobApplicationsData} layout="horizontal">
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
-                        <YAxis dataKey="company" type="category" width={120} />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="applications" fill="var(--color-applications)" name="Applications" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Monthly Job Postings</CardTitle>
-                  <CardDescription>Job posting trends over time</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer config={chartConfig} className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={monthlyJobPostings}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Line 
-                          type="monotone" 
-                          dataKey="jobs" 
-                          stroke="var(--color-jobs)" 
-                          strokeWidth={3}
-                          dot={{ fill: "var(--color-jobs)", strokeWidth: 2, r: 6 }}
-                          name="Job Postings"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
+                  {topCompaniesData.length > 0 ? (
+                    <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={topCompaniesData} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                          <XAxis type="number" />
+                          <YAxis 
+                            dataKey="company" 
+                            type="category" 
+                            width={100} 
+                            tick={{ fontSize: 12 }}
+                          />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Bar 
+                            dataKey="applications" 
+                            fill="hsl(217, 91%, 60%)" 
+                            name="Applications"
+                            radius={[0, 4, 4, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-8">No applications yet</p>
+                  )}
                 </CardContent>
               </Card>
             </div>
 
-            {/* Top Companies and Recent Jobs */}
+            {/* Tables Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Top Companies by Applications</CardTitle>
+                  <CardTitle>Top Companies</CardTitle>
+                  <CardDescription>Companies with most applications</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Company</TableHead>
-                        <TableHead>Applications</TableHead>
-                        <TableHead>Hires</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {topCompanies.map((company) => (
-                        <TableRow key={company.id}>
-                          <TableCell className="font-medium">{company.name}</TableCell>
-                          <TableCell>{company.applications}</TableCell>
-                          <TableCell>{company.hires}</TableCell>
+                  {topCompaniesData.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Company</TableHead>
+                          <TableHead className="text-right">Applications</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {topCompaniesData.map((company, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{company.company}</TableCell>
+                            <TableCell className="text-right">
+                              <Badge variant="secondary">{company.applications}</Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">No applications yet</p>
+                  )}
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
                   <CardTitle>Recent Job Listings</CardTitle>
-                  <CardDescription>Latest job postings overview</CardDescription>
+                  <CardDescription>Latest job postings</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Job Title</TableHead>
-                        <TableHead>Company</TableHead>
-                        <TableHead>Applications</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {jobListings.map((job) => (
-                        <TableRow key={job.id}>
-                          <TableCell className="font-medium">{job.title}</TableCell>
-                          <TableCell>{job.company}</TableCell>
-                          <TableCell>{job.applications}</TableCell>
+                  {recentJobs.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Job Title</TableHead>
+                          <TableHead>Status</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {recentJobs.map((job) => (
+                          <TableRow key={job.id}>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{job.title}</div>
+                                <div className="text-sm text-muted-foreground">{job.company}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge 
+                                variant={job.status === "Active" ? "default" : "secondary"}
+                                className={job.status === "Active" ? "bg-green-500" : "bg-yellow-500"}
+                              >
+                                {job.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">No jobs posted yet</p>
+                  )}
                 </CardContent>
               </Card>
             </div>

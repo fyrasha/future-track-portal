@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileText, LogIn, Download, Edit, Plus, Upload, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
@@ -253,80 +254,82 @@ ${resume.projects.map(proj => `${proj.name}\n${proj.description}\nTechnologies: 
             <CardDescription>Manage all your saved resumes</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {resumes.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                  <p className="text-sm text-gray-600">No resumes yet. Create your first resume!</p>
-                </div>
-              ) : (
-                resumes.map((resume, index) => (
-                  <div key={resume.id} className={`p-4 rounded-lg border ${index !== resumes.length - 1 ? 'border-b' : ''}`}>
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg text-unisphere-darkBlue">{resume.personalInfo.name}</h3>
-                        <p className="text-sm text-gray-600">{resume.personalInfo.email}</p>
-                        <p className="text-xs text-gray-500">{resume.personalInfo.phone}</p>
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-4">
+                {resumes.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                    <p className="text-sm text-gray-600">No resumes yet. Create your first resume!</p>
+                  </div>
+                ) : (
+                  resumes.map((resume, index) => (
+                    <div key={resume.id} className={`p-4 rounded-lg border ${index !== resumes.length - 1 ? 'border-b' : ''}`}>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg text-unisphere-darkBlue">{resume.personalInfo.name}</h3>
+                          <p className="text-sm text-gray-600">{resume.personalInfo.email}</p>
+                          <p className="text-xs text-gray-500">{resume.personalInfo.phone}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleDelete(resume.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleDelete(resume.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                      <div className="bg-gray-50 p-3 rounded">
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Position</p>
-                        <p className="text-sm font-medium text-gray-900">{resume.experience[0]?.position || 'Student'}</p>
-                        <p className="text-xs text-gray-600">{resume.experience[0]?.company || 'N/A'}</p>
-                      </div>
-                      <div className="bg-gray-50 p-3 rounded">
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Education</p>
-                        <p className="text-sm font-medium text-gray-900">{resume.education[0]?.degree || 'N/A'}</p>
-                        <p className="text-xs text-gray-600">{resume.education[0]?.institution || 'University'}</p>
-                      </div>
-                      <div className="bg-gray-50 p-3 rounded">
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Skills</p>
-                        <div className="flex flex-wrap gap-1">
-                          {resume.skills.slice(0, 3).map((skill, idx) => (
-                            <span key={idx} className="text-xs bg-unisphere-blue/10 text-unisphere-darkBlue px-2 py-0.5 rounded">
-                              {skill}
-                            </span>
-                          ))}
-                          {resume.skills.length > 3 && (
-                            <span className="text-xs text-gray-500">+{resume.skills.length - 3}</span>
-                          )}
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                        <div className="bg-gray-50 p-3 rounded">
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Position</p>
+                          <p className="text-sm font-medium text-gray-900">{resume.experience[0]?.position || 'Student'}</p>
+                          <p className="text-xs text-gray-600">{resume.experience[0]?.company || 'N/A'}</p>
+                        </div>
+                        <div className="bg-gray-50 p-3 rounded">
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Education</p>
+                          <p className="text-sm font-medium text-gray-900">{resume.education[0]?.degree || 'N/A'}</p>
+                          <p className="text-xs text-gray-600">{resume.education[0]?.institution || 'University'}</p>
+                        </div>
+                        <div className="bg-gray-50 p-3 rounded">
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Skills</p>
+                          <div className="flex flex-wrap gap-1">
+                            {resume.skills.slice(0, 3).map((skill, idx) => (
+                              <span key={idx} className="text-xs bg-unisphere-blue/10 text-unisphere-darkBlue px-2 py-0.5 rounded">
+                                {skill}
+                              </span>
+                            ))}
+                            {resume.skills.length > 3 && (
+                              <span className="text-xs text-gray-500">+{resume.skills.length - 3}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm"
+                          className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white"
+                          onClick={() => handleEdit(resume)}
+                        >
+                          <Edit className="mr-2 h-3 w-3" />
+                          Edit
+                        </Button>
+                        <Button 
+                          size="sm"
+                          variant="outline" 
+                          className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10"
+                          onClick={() => handleDownload(resume)}
+                        >
+                          <Download className="mr-2 h-3 w-3" />
+                          Download
+                        </Button>
+                      </div>
                     </div>
-                    
-                    <div className="flex space-x-2">
-                      <Button 
-                        size="sm"
-                        className="bg-unisphere-darkBlue hover:bg-unisphere-blue text-white"
-                        onClick={() => handleEdit(resume)}
-                      >
-                        <Edit className="mr-2 h-3 w-3" />
-                        Edit
-                      </Button>
-                      <Button 
-                        size="sm"
-                        variant="outline" 
-                        className="border-unisphere-blue text-unisphere-blue hover:bg-unisphere-blue/10"
-                        onClick={() => handleDownload(resume)}
-                      >
-                        <Download className="mr-2 h-3 w-3" />
-                        Download
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
 

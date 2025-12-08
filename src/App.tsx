@@ -28,6 +28,7 @@ import NotFound from "./pages/NotFound";
 import AdminJobManagement from "./pages/AdminJobManagement";
 import AdminEmployerReview from "./pages/AdminEmployerReview";
 import EmployerPostJob from "./pages/EmployerPostJob";
+import StudentSubmitEvent from "./pages/StudentSubmitEvent";
 
 // Create a client outside of the component
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/resume" element={<Resume />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/events" element={<Events />} />
+            <Route path="/student/submit-event" element={<StudentSubmitEvent />} />
             <Route path="/ai-resume-screen" element={<AIResumeScreen />} />
             <Route path="/applications" element={<Applications />} />
             <Route path="/recommendations" element={<Recommendations />} />

@@ -1,9 +1,8 @@
-
 import MainLayout from '@/components/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, Users, Briefcase } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, Briefcase, PlusCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where, doc, runTransaction, Timestamp, increment } from 'firebase/firestore';
@@ -11,6 +10,7 @@ import { Event } from '@/types/event';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
 
 const Events = () => {
   const { toast } = useToast();
@@ -230,9 +230,17 @@ const Events = () => {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Upcoming Events</h1>
-          <p className="text-gray-600">Discover and register for upcoming events and activities</p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Upcoming Events</h1>
+            <p className="text-gray-600">Discover and register for upcoming events and activities</p>
+          </div>
+          <Link to="/student/submit-event">
+            <Button className="bg-green-600 hover:bg-green-700 text-white">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Submit an Event
+            </Button>
+          </Link>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

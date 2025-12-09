@@ -26,28 +26,6 @@ import { db, auth } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { supabase } from "@/integrations/supabase/client";
 
-<<<<<<< HEAD
-const mockFeedback = { //dummy data
-  score: 78,
-  matchScore: 82,
-  strengths: [
-    "Strong technical skills with React and TypeScript",
-    "Relevant internship experience",
-    "Clear presentation of projects"
-  ],
-  improvements: [
-    "Add more quantifiable achievements",
-    "Include certifications section",
-    "Expand on leadership experiences"
-  ],
-  keywordMatches: [
-    "React", "TypeScript", "JavaScript", "Web Development"
-  ],
-  missingKeywords: [
-    "Docker", "AWS", "CI/CD", "Agile"
-  ]
-};
-=======
 interface Resume {
   id: string;
   personalInfo: {
@@ -69,7 +47,6 @@ interface AnalysisResult {
   keywordMatches: string[];
   missingKeywords: string[];
 }
->>>>>>> f4e567ae037ec9b70a562073802bac7ec98199ba
 
 const AIResumeScreen = () => {
   const [isScanning, setIsScanning] = useState(false);
@@ -81,15 +58,6 @@ const AIResumeScreen = () => {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const { toast } = useToast();
 
-<<<<<<< HEAD
-  const handleResumeUpload = () => {
-    //mock resume upload
-    setUploadedResume("Jane_Doe_Resume.pdf");
-    toast({
-      title: "Resume Uploaded",
-      description: "Your resume has been successfully uploaded."
-    });
-=======
   const jobPositions = [
     // Software & Technology
     "Software Engineer", "Software Engineer Intern", "Senior Software Engineer", "Lead Software Engineer", "Principal Software Engineer",
@@ -290,7 +258,6 @@ const AIResumeScreen = () => {
         variant: "destructive"
       });
     }
->>>>>>> f4e567ae037ec9b70a562073802bac7ec98199ba
   };
 
   const startScan = async () => {
@@ -314,11 +281,6 @@ const AIResumeScreen = () => {
 
     setIsScanning(true);
     
-<<<<<<< HEAD
-    //simulate scanning process
-    setTimeout(() => {
-      setIsScanning(false);
-=======
     try {
       // Call the edge function to analyze the resume
       const { data, error } = await supabase.functions.invoke('analyze-resume', {
@@ -331,7 +293,6 @@ const AIResumeScreen = () => {
       if (error) throw error;
 
       setAnalysisResult(data);
->>>>>>> f4e567ae037ec9b70a562073802bac7ec98199ba
       setScanComplete(true);
       toast({
         title: "Scan Complete",
@@ -453,10 +414,10 @@ const AIResumeScreen = () => {
                   <div className="animate-pulse mb-6">
                     <FileText className="h-16 w-16 mx-auto text-unisphere-blue" />
                   </div>
-                  <h2 className="text-xl font-medium mb-3 text-unisphere-darkBlue">Analysing Resume</h2>
+                  <h2 className="text-xl font-medium mb-3 text-unisphere-darkBlue">Analyzing Resume</h2>
                   <Progress value={65} className="max-w-xs mx-auto mb-6" />
                   <p className="text-gray-600 max-w-sm mx-auto">
-                    Our AI is analysing your resume against the selected job requirements. This will just take a moment...
+                    Our AI is analyzing your resume against the selected job requirements. This will just take a moment...
                   </p>
                 </CardContent>
               </Card>
@@ -593,7 +554,7 @@ const AIResumeScreen = () => {
               <Card className="h-full flex items-center justify-center">
                 <CardContent className="text-center py-20">
                   <FileText className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                  <h2 className="text-xl font-medium mb-2 text-gray-700">Ready to Analyse Your Resume</h2>
+                  <h2 className="text-xl font-medium mb-2 text-gray-700">Ready to Analyze Your Resume</h2>
                   <p className="text-gray-600 max-w-sm mx-auto mb-6">
                     Upload your resume and select a job position to get AI-powered feedback on how well your resume matches the job requirements.
                   </p>

@@ -72,11 +72,7 @@ const AdminForgotPassword = () => {
                     id="email"
                     name="email"
                     type="email"
-<<<<<<< HEAD
                     placeholder="admin@example.com"
-=======
-                    placeholder="admin@unisphere.com"
->>>>>>> f4e567ae037ec9b70a562073802bac7ec98199ba
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

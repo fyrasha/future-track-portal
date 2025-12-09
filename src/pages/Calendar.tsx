@@ -21,40 +21,23 @@ import {
 import MainLayout from "@/components/MainLayout";
 import ReminderSystem from "@/components/ReminderSystem";
 import { Link } from "react-router-dom";
+import { db, auth } from "@/lib/firebase";
+import { collection, query, where, getDocs, addDoc, deleteDoc, doc, updateDoc, Timestamp } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
-// Mock calendar events
-const mockEvents = [
-  {
-    id: 1,
-    title: "Technical Interview",
-    company: "TechCorp Malaysia",
-    date: "2025-05-30",
-    time: "14:00 - 15:30",
-    type: "interview",
-    location: "Zoom Meeting",
-    status: "confirmed"
-  },
-  {
-    id: 2,
-    title: "Application Deadline",
-    company: "Analytics Pro",
-    date: "2025-06-15", 
-    time: "23:59",
-    type: "deadline",
-    location: "Online",
-    status: "pending"
-  },
-  {
-    id: 3,
-    title: "Career Fair",
-    company: "University of Malaya",
-    date: "2025-06-20",
-    time: "09:00 - 17:00",
-    type: "event",
-    location: "Main Hall, UM",
-    status: "registered"
-  }
-];
+interface CalendarEvent {
+  id: string;
+  userId: string;
+  title: string;
+  company: string;
+  date: Timestamp;
+  time: string;
+  type: "interview" | "event" | "deadline";
+  location: string;
+  status: string;
+  description?: string;
+}
 
 const CalendarPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -305,7 +288,7 @@ const CalendarPage = () => {
     setEventDetailsDialogOpen(true);
   };
 
-  //get events for selected date
+  // Get events for selected date
   const selectedDateEvents = selectedDate 
     ? events.filter(event => 
         event.date.toDate().toDateString() === selectedDate.toDateString()
@@ -320,8 +303,37 @@ const CalendarPage = () => {
     return eventDate >= today && eventDate <= nextWeek;
   }).sort((a, b) => a.date.toMillis() - b.date.toMillis());
 
-  // Get dates that have events for calendar highlighting
-  const eventDates = events.map(event => new Date(event.date));
+  // Group event dates by type for calendar color coding
+  const eventDatesByType = events.reduce((acc, event) => {
+    const dateStr = event.date.toDate().toDateString();
+    if (!acc[dateStr]) {
+      acc[dateStr] = [];
+    }
+    acc[dateStr].push(event.type);
+    return acc;
+  }, {} as Record<string, string[]>);
+
+  // Custom day content to show colored dots for events
+  const getDayModifiers = () => {
+    const interviewDates: Date[] = [];
+    const eventDates: Date[] = [];
+    const deadlineDates: Date[] = [];
+
+    events.forEach(event => {
+      const date = event.date.toDate();
+      if (event.type === "interview") {
+        interviewDates.push(date);
+      } else if (event.type === "event") {
+        eventDates.push(date);
+      } else if (event.type === "deadline") {
+        deadlineDates.push(date);
+      }
+    });
+
+    return { interviewDates, eventDates, deadlineDates };
+  };
+
+  const { interviewDates, eventDates: eventDateList, deadlineDates } = getDayModifiers();
 
   const getEventTypeColor = (type: string) => {
     switch (type) {
@@ -355,7 +367,7 @@ const CalendarPage = () => {
         <div className="container mx-auto py-8 px-4">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-2">Calendar</h1>
-            <p className="text-gray-600">Keep track of interviews, deadlines and important events</p>
+            <p className="text-gray-600">Keep track of interviews, deadlines, and important events</p>
           </div>
 
           <Card className="max-w-md mx-auto text-center">
@@ -396,7 +408,7 @@ const CalendarPage = () => {
       <div className="container mx-auto py-8 px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-unisphere-darkBlue mb-2">Calendar</h1>
-          <p className="text-gray-600">Keep track of interviews, deadlines and important events</p>
+          <p className="text-gray-600">Keep track of interviews, deadlines, and important events</p>
         </div>
 
         {/* Reminder System */}
@@ -444,10 +456,23 @@ const CalendarPage = () => {
                     deadline: deadlineDates
                   }}
                   modifiersStyles={{
-                    eventDay: { 
-                      backgroundColor: '#dbeafe', 
-                      color: '#1e40af',
-                      fontWeight: 'bold'
+                    interview: { 
+                      backgroundColor: '#10b981', 
+                      color: 'white',
+                      fontWeight: 'bold',
+                      borderRadius: '50%'
+                    },
+                    event: { 
+                      backgroundColor: '#3b82f6', 
+                      color: 'white',
+                      fontWeight: 'bold',
+                      borderRadius: '50%'
+                    },
+                    deadline: { 
+                      backgroundColor: '#ef4444', 
+                      color: 'white',
+                      fontWeight: 'bold',
+                      borderRadius: '50%'
                     }
                   }}
                 />

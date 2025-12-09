@@ -55,9 +55,41 @@ const Jobs = () => {
     queryKey: ['jobs', 'visible', userRole, 'withCompanyStatus'],
     queryFn: async () => {
       const jobsCollection = collection(db, "jobs");
-      const q = query(jobsCollection, where("status", "in", ["Active", "Pending"]), orderBy("postedDate", "desc"));
-      const jobSnapshot = await getDocs(q);
-      return jobSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }));
+      
+      // Fetch Active and Pending jobs separately to avoid composite index requirement
+      const activeQuery = query(jobsCollection, where("status", "==", "Active"));
+      const pendingQuery = query(jobsCollection, where("status", "==", "Pending"));
+      
+      const [activeSnapshot, pendingSnapshot] = await Promise.all([
+        getDocs(activeQuery),
+        getDocs(pendingQuery)
+      ]);
+      
+      const jobs: Job[] = [
+        ...activeSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id })),
+        ...pendingSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Job, 'id'>), id: doc.id }))
+      ].sort((a, b) => b.postedDate.toMillis() - a.postedDate.toMillis());
+
+      if (jobs.length === 0) {
+        return [];
+      }
+
+      const companyIds = [...new Set(jobs.map(job => job.companyId).filter(Boolean))];
+
+      const employersMap = new Map<string, 'Verified' | 'Pending' | 'Rejected'>();
+      if (companyIds.length > 0) {
+        const employersCollection = collection(db, "employers");
+        const employersQuery = query(employersCollection, where(documentId(), 'in', companyIds));
+        const employerSnapshot = await getDocs(employersQuery);
+        employerSnapshot.forEach(doc => {
+          employersMap.set(doc.id, (doc.data() as { status: 'Verified' | 'Pending' | 'Rejected' }).status);
+        });
+      }
+
+      return jobs.map(job => ({
+        ...job,
+        isCompanyVerified: employersMap.get(job.companyId) === 'Verified',
+      }));
     },
   });
   
@@ -188,7 +220,6 @@ const Jobs = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {/* ... keep existing code (job location and description) */}
                   <div className="flex items-center text-gray-500 mb-3">
                     <MapPin className="h-4 w-4 mr-2" />
                     <span>{job.location || 'Not specified'}</span>
@@ -198,7 +229,6 @@ const Jobs = () => {
                   </p>
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row justify-between border-t pt-4">
-                  {/* ... keep existing code (deadline and action buttons) */}
                   <div className="flex items-center text-gray-500 mb-2 sm:mb-0">
                     <Calendar className="h-4 w-4 mr-2" />
                     <span>Deadline: {job.deadline.toDate().toLocaleDateString()}</span>
@@ -231,6 +261,8 @@ const Jobs = () => {
             </div>
           )}
         </div>
+        
+        {/* Pagination removed as it's not connected to Firestore yet */}
 
         {/* Application Dialog */}
         {selectedJob && (

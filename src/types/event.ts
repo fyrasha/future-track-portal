@@ -16,6 +16,8 @@ export interface Event {
   participants: number;
   capacity: number;
   createdAt: Timestamp;
+  organizer?: string;
+  contactEmail?: string;
 }
 
 export type EventFormValues = {

@@ -23,15 +23,17 @@ import {
   Briefcase, 
   TrendingUp, 
   Calendar,
-  Loader2
+  Loader2,
+  Mail,
+  Zap,
+  Clock,
+  AlertCircle
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
 } from "@/components/ui/chart";
 import {
   BarChart,
@@ -42,29 +44,33 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
-  ResponsiveContainer
+  ResponsiveContainer,
+  Legend
 } from "recharts";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, query, where, Timestamp } from "firebase/firestore";
+import { collection, onSnapshot, Timestamp } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
 const chartConfig = {
-  active: {
-    label: "Active Students",
+  highlyActive: {
+    label: "Highly Active",
     color: "hsl(142, 76%, 36%)",
   },
+  active: {
+    label: "Active",
+    color: "hsl(217, 91%, 60%)",
+  },
+  lowActivity: {
+    label: "Low Activity",
+    color: "hsl(38, 92%, 50%)",
+  },
   inactive: {
-    label: "Inactive Students", 
+    label: "Inactive", 
     color: "hsl(0, 84%, 60%)",
   },
   applications: {
     label: "Applications",
     color: "hsl(217, 91%, 60%)",
-  },
-  jobs: {
-    label: "Job Postings",
-    color: "hsl(262, 83%, 58%)",
   },
   pending: {
     label: "Pending Jobs",
@@ -92,16 +98,32 @@ interface Job {
 interface Application {
   id: string;
   jobId: string;
-  userId: string;
+  userId?: string;
+  studentId?: string;
   appliedAt?: any;
   company?: string;
 }
 
 interface EventRegistration {
   id: string;
-  userId: string;
+  userId?: string;
+  studentId?: string;
   registeredAt?: any;
 }
+
+// Activity levels based on recency
+type ActivityLevel = 'highlyActive' | 'active' | 'lowActivity' | 'inactive';
+
+interface StudentActivity {
+  student: Student;
+  level: ActivityLevel;
+  lastActivityDate: Date | null;
+  activityCount: number;
+}
+
+const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+const SIXTY_DAYS = 60 * 24 * 60 * 60 * 1000;
+const NINETY_DAYS = 90 * 24 * 60 * 60 * 1000;
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -109,6 +131,7 @@ const AdminDashboard = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [eventRegistrations, setEventRegistrations] = useState<EventRegistration[]>([]);
+  const { toast } = useToast();
 
   // Real-time listeners
   useEffect(() => {
@@ -164,17 +187,79 @@ const AdminDashboard = () => {
     };
   }, []);
 
-  // Calculate analytics
-  const totalStudents = students.length;
-  
-  // Active students = students who have applied or registered for events
-  const activeStudentIds = new Set([
-    ...applications.map(app => app.userId),
-    ...eventRegistrations.map(reg => reg.userId)
-  ]);
-  const activeStudents = activeStudentIds.size;
-  const inactiveStudents = Math.max(0, totalStudents - activeStudents);
+  // Calculate enhanced activity levels for each student
+  const calculateStudentActivities = (): StudentActivity[] => {
+    const now = new Date();
+    
+    return students.map(student => {
+      // Get all activities for this student
+      const studentApps = applications.filter(app => 
+        app.userId === student.id || app.studentId === student.id
+      );
+      const studentRegs = eventRegistrations.filter(reg => 
+        reg.userId === student.id || reg.studentId === student.id
+      );
+      
+      // Find the most recent activity
+      const allActivityDates: Date[] = [];
+      
+      studentApps.forEach(app => {
+        if (app.appliedAt) {
+          const date = app.appliedAt.toDate ? app.appliedAt.toDate() : new Date(app.appliedAt);
+          allActivityDates.push(date);
+        }
+      });
+      
+      studentRegs.forEach(reg => {
+        if (reg.registeredAt) {
+          const date = reg.registeredAt.toDate ? reg.registeredAt.toDate() : new Date(reg.registeredAt);
+          allActivityDates.push(date);
+        }
+      });
+      
+      const lastActivityDate = allActivityDates.length > 0 
+        ? new Date(Math.max(...allActivityDates.map(d => d.getTime())))
+        : null;
+      
+      const activityCount = studentApps.length + studentRegs.length;
+      
+      // Determine activity level based on recency and count
+      let level: ActivityLevel;
+      
+      if (lastActivityDate === null) {
+        level = 'inactive';
+      } else {
+        const daysSinceActivity = now.getTime() - lastActivityDate.getTime();
+        
+        if (daysSinceActivity <= THIRTY_DAYS && activityCount >= 3) {
+          level = 'highlyActive';
+        } else if (daysSinceActivity <= THIRTY_DAYS) {
+          level = 'active';
+        } else if (daysSinceActivity <= SIXTY_DAYS) {
+          level = 'lowActivity';
+        } else {
+          level = 'inactive';
+        }
+      }
+      
+      return {
+        student,
+        level,
+        lastActivityDate,
+        activityCount
+      };
+    });
+  };
 
+  const studentActivities = calculateStudentActivities();
+  
+  // Count by activity level
+  const highlyActiveCount = studentActivities.filter(sa => sa.level === 'highlyActive').length;
+  const activeCount = studentActivities.filter(sa => sa.level === 'active').length;
+  const lowActivityCount = studentActivities.filter(sa => sa.level === 'lowActivity').length;
+  const inactiveCount = studentActivities.filter(sa => sa.level === 'inactive').length;
+
+  const totalStudents = students.length;
   const totalJobs = jobs.length;
   const activeJobs = jobs.filter(job => job.status === "Active").length;
   const pendingJobs = jobs.filter(job => job.status === "Pending").length;
@@ -183,17 +268,19 @@ const AdminDashboard = () => {
   const uniqueCompanies = new Set(jobs.map(job => job.company));
   const totalCompanies = uniqueCompanies.size;
 
-  // Student status data for pie chart
-  const studentStatusData = [
-    { name: "Active", value: activeStudents, color: "hsl(142, 76%, 36%)" },
-    { name: "Inactive", value: inactiveStudents, color: "hsl(0, 84%, 60%)" }
-  ];
+  // Student activity data for pie chart with 4 levels
+  const studentActivityData = [
+    { name: "Highly Active", value: highlyActiveCount, color: "hsl(142, 76%, 36%)" },
+    { name: "Active", value: activeCount, color: "hsl(217, 91%, 60%)" },
+    { name: "Low Activity", value: lowActivityCount, color: "hsl(38, 92%, 50%)" },
+    { name: "Inactive", value: inactiveCount, color: "hsl(0, 84%, 60%)" }
+  ].filter(d => d.value > 0);
 
   // Job status data for pie chart
   const jobStatusData = [
     { name: "Active", value: activeJobs, color: "hsl(142, 76%, 36%)" },
     { name: "Pending", value: pendingJobs, color: "hsl(38, 92%, 50%)" }
-  ];
+  ].filter(d => d.value > 0);
 
   // Applications by company
   const appsByCompany = jobs.reduce((acc, job) => {
@@ -213,10 +300,16 @@ const AdminDashboard = () => {
     .sort((a, b) => b.applications - a.applications)
     .slice(0, 5);
 
-  // Inactive students list (students with no applications or registrations)
-  const inactiveStudentsList = students
-    .filter(student => !activeStudentIds.has(student.id))
-    .slice(0, 5);
+  // Students needing attention (inactive or low activity)
+  const studentsNeedingAttention = studentActivities
+    .filter(sa => sa.level === 'inactive' || sa.level === 'lowActivity')
+    .sort((a, b) => {
+      // Inactive first, then by activity count
+      if (a.level === 'inactive' && b.level !== 'inactive') return -1;
+      if (a.level !== 'inactive' && b.level === 'inactive') return 1;
+      return a.activityCount - b.activityCount;
+    })
+    .slice(0, 8);
 
   // Recent jobs
   const recentJobs = [...jobs]
@@ -226,6 +319,39 @@ const AdminDashboard = () => {
       return dateB.getTime() - dateA.getTime();
     })
     .slice(0, 5);
+
+  const handleContactStudent = (student: Student) => {
+    // Open email client
+    window.location.href = `mailto:${student.email}?subject=UniSphere - We'd love to see you more active!&body=Hi ${student.name || 'there'},%0D%0A%0D%0AWe noticed you haven't been active on UniSphere recently. We have some exciting job opportunities and events that might interest you!%0D%0A%0D%0ABest regards,%0D%0AUniSphere Team`;
+    
+    toast({
+      title: "Opening Email Client",
+      description: `Composing email to ${student.email}`,
+    });
+  };
+
+  const getActivityBadge = (level: ActivityLevel) => {
+    switch (level) {
+      case 'highlyActive':
+        return <Badge className="bg-green-100 text-green-800"><Zap className="h-3 w-3 mr-1" />Highly Active</Badge>;
+      case 'active':
+        return <Badge className="bg-blue-100 text-blue-800"><TrendingUp className="h-3 w-3 mr-1" />Active</Badge>;
+      case 'lowActivity':
+        return <Badge className="bg-amber-100 text-amber-800"><Clock className="h-3 w-3 mr-1" />Low Activity</Badge>;
+      case 'inactive':
+        return <Badge className="bg-red-100 text-red-800"><AlertCircle className="h-3 w-3 mr-1" />Inactive</Badge>;
+    }
+  };
+
+  const formatLastActivity = (date: Date | null) => {
+    if (!date) return "Never";
+    const days = Math.floor((new Date().getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    if (days === 0) return "Today";
+    if (days === 1) return "Yesterday";
+    if (days < 7) return `${days} days ago`;
+    if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+    return `${Math.floor(days / 30)} months ago`;
+  };
 
   if (loading) {
     return (
@@ -252,107 +378,152 @@ const AdminDashboard = () => {
           </TabsList>
 
           <TabsContent value="student-activity" className="space-y-6">
-            {/* Student Analytics Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
+            {/* Student Analytics Overview - 4 Level System */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="border-l-4 border-l-green-500">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-green-500" />
+                    Highly Active
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center space-x-2">
-                    <Users className="h-5 w-5 text-primary" />
-                    <div className="text-3xl font-bold">{totalStudents}</div>
-                  </div>
+                  <div className="text-3xl font-bold text-green-600">{highlyActiveCount}</div>
+                  <p className="text-xs text-muted-foreground mt-1">3+ activities in 30 days</p>
                 </CardContent>
               </Card>
 
-              <Card className="border-l-4 border-l-green-500">
+              <Card className="border-l-4 border-l-blue-500">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Active Students</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-blue-500" />
+                    Active
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center space-x-2">
-                    <TrendingUp className="h-5 w-5 text-green-500" />
-                    <div className="text-3xl font-bold text-green-600">{activeStudents}</div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">Applied or registered for events</p>
+                  <div className="text-3xl font-bold text-blue-600">{activeCount}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Activity within 30 days</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-amber-500">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-amber-500" />
+                    Low Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-amber-600">{lowActivityCount}</div>
+                  <p className="text-xs text-muted-foreground mt-1">30-60 days since activity</p>
                 </CardContent>
               </Card>
 
               <Card className="border-l-4 border-l-red-500">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Inactive Students</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    Inactive
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center space-x-2">
-                    <Users className="h-5 w-5 text-red-500" />
-                    <div className="text-3xl font-bold text-red-600">{inactiveStudents}</div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">No recent activity</p>
+                  <div className="text-3xl font-bold text-red-600">{inactiveCount}</div>
+                  <p className="text-xs text-muted-foreground mt-1">No activity in 60+ days</p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Student Activity Chart */}
+            {/* Total Students Card */}
             <Card>
-              <CardHeader>
-                <CardTitle>Student Status Distribution</CardTitle>
-                <CardDescription>Current active vs inactive breakdown</CardDescription>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Registered Students</CardTitle>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={studentStatusData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                        label={({ name, value, percent }) => 
-                          value > 0 ? `${name}: ${value} (${(percent * 100).toFixed(0)}%)` : null
-                        }
-                      >
-                        {studentStatusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+                <div className="flex items-center space-x-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <div className="text-3xl font-bold">{totalStudents}</div>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Inactive Students Details */}
+            {/* Student Activity Chart */}
             <Card>
               <CardHeader>
-                <CardTitle>Students with No Activity</CardTitle>
-                <CardDescription>Students who haven't applied to jobs or registered for events</CardDescription>
+                <CardTitle>Student Engagement Distribution</CardTitle>
+                <CardDescription>Activity levels based on job applications and event registrations in the last 60 days</CardDescription>
               </CardHeader>
               <CardContent>
-                {inactiveStudentsList.length > 0 ? (
+                {studentActivityData.length > 0 ? (
+                  <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={studentActivityData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          paddingAngle={4}
+                          dataKey="value"
+                          label={({ name, value, percent }) => 
+                            `${name}: ${value} (${(percent * 100).toFixed(0)}%)`
+                          }
+                        >
+                          {studentActivityData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">No student data available</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Students Needing Attention */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Students Needing Attention</CardTitle>
+                <CardDescription>Students with low or no activity - consider reaching out</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {studentsNeedingAttention.length > 0 ? (
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Student</TableHead>
                         <TableHead>Email</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Last Activity</TableHead>
                         <TableHead>Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {inactiveStudentsList.map((student) => (
-                        <TableRow key={student.id}>
+                      {studentsNeedingAttention.map((sa) => (
+                        <TableRow key={sa.student.id}>
                           <TableCell className="font-medium">
-                            {student.name || "No name"}
+                            {sa.student.name || "No name"}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
-                            {student.email}
+                            {sa.student.email}
                           </TableCell>
                           <TableCell>
-                            <Button variant="outline" size="sm">
+                            {getActivityBadge(sa.level)}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {formatLastActivity(sa.lastActivityDate)}
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleContactStudent(sa.student)}
+                            >
+                              <Mail className="h-4 w-4 mr-1" />
                               Contact
                             </Button>
                           </TableCell>
@@ -361,7 +532,7 @@ const AdminDashboard = () => {
                     </TableBody>
                   </Table>
                 ) : (
-                  <p className="text-muted-foreground text-center py-4">All students are active!</p>
+                  <p className="text-muted-foreground text-center py-4">All students are engaged!</p>
                 )}
               </CardContent>
             </Card>
@@ -416,27 +587,32 @@ const AdminDashboard = () => {
                   <CardDescription>Active vs pending job postings</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={jobStatusData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={80}
-                          paddingAngle={5}
-                          dataKey="value"
-                          label={({ name, value }) => value > 0 ? `${name}: ${value}` : null}
-                        >
-                          {jobStatusData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
+                  {jobStatusData.length > 0 ? (
+                    <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={jobStatusData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={80}
+                            paddingAngle={5}
+                            dataKey="value"
+                            label={({ name, value }) => `${name}: ${value}`}
+                          >
+                            {jobStatusData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-8">No jobs yet</p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -495,7 +671,12 @@ const AdminDashboard = () => {
                       <TableBody>
                         {topCompaniesData.map((company, index) => (
                           <TableRow key={index}>
-                            <TableCell className="font-medium">{company.company}</TableCell>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center space-x-2">
+                                <Building className="h-4 w-4 text-muted-foreground" />
+                                <span>{company.company}</span>
+                              </div>
+                            </TableCell>
                             <TableCell className="text-right">
                               <Badge variant="secondary">{company.applications}</Badge>
                             </TableCell>
@@ -504,7 +685,7 @@ const AdminDashboard = () => {
                       </TableBody>
                     </Table>
                   ) : (
-                    <p className="text-muted-foreground text-center py-4">No applications yet</p>
+                    <p className="text-muted-foreground text-center py-4">No companies yet</p>
                   )}
                 </CardContent>
               </Card>
@@ -519,7 +700,7 @@ const AdminDashboard = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Job Title</TableHead>
+                          <TableHead>Job</TableHead>
                           <TableHead>Status</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -528,14 +709,14 @@ const AdminDashboard = () => {
                           <TableRow key={job.id}>
                             <TableCell>
                               <div>
-                                <div className="font-medium">{job.title}</div>
-                                <div className="text-sm text-muted-foreground">{job.company}</div>
+                                <p className="font-medium">{job.title}</p>
+                                <p className="text-sm text-muted-foreground">{job.company}</p>
                               </div>
                             </TableCell>
                             <TableCell>
                               <Badge 
-                                variant={job.status === "Active" ? "default" : "secondary"}
-                                className={job.status === "Active" ? "bg-green-500" : "bg-yellow-500"}
+                                variant={job.status === 'Active' ? 'default' : 'secondary'}
+                                className={job.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}
                               >
                                 {job.status}
                               </Badge>
@@ -545,7 +726,7 @@ const AdminDashboard = () => {
                       </TableBody>
                     </Table>
                   ) : (
-                    <p className="text-muted-foreground text-center py-4">No jobs posted yet</p>
+                    <p className="text-muted-foreground text-center py-4">No jobs yet</p>
                   )}
                 </CardContent>
               </Card>

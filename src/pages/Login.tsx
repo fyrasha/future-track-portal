@@ -59,7 +59,12 @@ const Login = () => {
         description: "Redirecting to your dashboard...",
       });
       
-      navigate("/dashboard");
+      // Redirect based on role
+      if (userRole === 'admin') {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
 
     } catch (error: any) {
       console.error("Login failed. Firebase error:", error);

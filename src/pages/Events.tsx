@@ -11,12 +11,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+import EventDetailsDialog from '@/components/EventDetailsDialog';
 
 const Events = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -98,6 +101,7 @@ const Events = () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['myRegistrations', userId] });
       queryClient.invalidateQueries({ queryKey: ['studentRegistrations', userId] });
+      setIsDetailsOpen(false);
     },
     onError: (error: Error) => {
       toast({ title: "Registration Failed", description: error.message, variant: "destructive" });
@@ -114,6 +118,11 @@ const Events = () => {
         return;
     }
     registerMutation.mutate(event);
+  };
+
+  const handleViewDetails = (event: Event) => {
+    setSelectedEvent(event);
+    setIsDetailsOpen(true);
   };
 
   const getCategoryColor = (category: string) => {
@@ -187,7 +196,7 @@ const Events = () => {
             <CardTitle className="text-xl">{event.name}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-600 mb-4">{event.description}</p>
+            <p className="text-gray-600 mb-4 line-clamp-2">{event.description}</p>
             
             <div className="space-y-2 mb-4">
               <div className="flex items-center text-sm text-gray-500">
@@ -217,7 +226,11 @@ const Events = () => {
               >
                 {isRegistering ? 'Registering...' : (isRegistered ? 'Registered' : (isFull ? 'Full' : 'Register'))}
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleViewDetails(event)}
+              >
                 Details
               </Button>
             </div>
@@ -235,18 +248,30 @@ const Events = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Upcoming Events</h1>
             <p className="text-gray-600">Discover and register for upcoming events and activities</p>
           </div>
-          <Link to="/student/submit-event">
-            <Button className="bg-green-600 hover:bg-green-700 text-white">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Submit an Event
-            </Button>
-          </Link>
+          {isLoggedIn && (
+            <Link to="/student/submit-event">
+              <Button className="bg-green-600 hover:bg-green-700 text-white">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Submit an Event
+              </Button>
+            </Link>
+          )}
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {renderEvents()}
         </div>
       </div>
+
+      {/* Event Details Dialog */}
+      <EventDetailsDialog
+        event={selectedEvent}
+        open={isDetailsOpen}
+        onOpenChange={setIsDetailsOpen}
+        isRegistered={selectedEvent ? (registeredEventIds?.includes(selectedEvent.id) ?? false) : false}
+        onRegister={() => selectedEvent && handleRegister(selectedEvent)}
+        isRegistering={registerMutation.isPending}
+      />
     </MainLayout>
   );
 };

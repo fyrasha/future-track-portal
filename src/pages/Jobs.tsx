@@ -241,7 +241,7 @@ const Jobs = () => {
                     <span>Deadline: {job.deadline.toDate().toLocaleDateString()}</span>
                   </div>
                   <div className="flex gap-2">
-                    <Link to={`/company/${job.companyId}`}>
+                    <Link to={`/jobs/${job.id}`}>
                       <Button 
                         variant="outline" 
                         className="border-blue-500 text-blue-500 hover:bg-blue-50"

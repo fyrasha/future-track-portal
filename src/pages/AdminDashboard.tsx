@@ -80,7 +80,8 @@ const chartConfig = {
 
 interface Student {
   id: string;
-  name?: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   lastActivity?: string;
   lastActivityDate?: any;
@@ -300,9 +301,13 @@ const AdminDashboard = () => {
     .sort((a, b) => b.applications - a.applications)
     .slice(0, 5);
 
-  // Students needing attention (inactive or low activity)
+  // Students needing attention (inactive or low activity) - exclude admin accounts
   const studentsNeedingAttention = studentActivities
-    .filter(sa => sa.level === 'inactive' || sa.level === 'lowActivity')
+    .filter(sa => {
+      const isInactiveOrLow = sa.level === 'inactive' || sa.level === 'lowActivity';
+      const isAdmin = sa.student.email?.toLowerCase().includes('admin');
+      return isInactiveOrLow && !isAdmin;
+    })
     .sort((a, b) => {
       // Inactive first, then by activity count
       if (a.level === 'inactive' && b.level !== 'inactive') return -1;
@@ -320,9 +325,17 @@ const AdminDashboard = () => {
     })
     .slice(0, 5);
 
+  const getStudentFullName = (student: Student) => {
+    const firstName = student.firstName || '';
+    const lastName = student.lastName || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    return fullName || 'No name';
+  };
+
   const handleContactStudent = (student: Student) => {
+    const studentName = getStudentFullName(student);
     // Open email client
-    window.location.href = `mailto:${student.email}?subject=UniSphere - We'd love to see you more active!&body=Hi ${student.name || 'there'},%0D%0A%0D%0AWe noticed you haven't been active on UniSphere recently. We have some exciting job opportunities and events that might interest you!%0D%0A%0D%0ABest regards,%0D%0AUniSphere Team`;
+    window.location.href = `mailto:${student.email}?subject=UniSphere - We'd love to see you more active!&body=Hi ${studentName !== 'No name' ? studentName : 'there'},%0D%0A%0D%0AWe noticed you haven't been active on UniSphere recently. We have some exciting job opportunities and events that might interest you!%0D%0A%0D%0ABest regards,%0D%0AUniSphere Team`;
     
     toast({
       title: "Opening Email Client",
@@ -506,7 +519,7 @@ const AdminDashboard = () => {
                       {studentsNeedingAttention.map((sa) => (
                         <TableRow key={sa.student.id}>
                           <TableCell className="font-medium">
-                            {sa.student.name || "No name"}
+                            {getStudentFullName(sa.student)}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             {sa.student.email}

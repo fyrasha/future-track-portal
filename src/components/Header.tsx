@@ -158,6 +158,12 @@ const Header = () => {
                         Recommendations
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/resume" className="cursor-pointer">
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        Resume
+                      </Link>
+                    </DropdownMenuItem>
                   </>
                 )}
 

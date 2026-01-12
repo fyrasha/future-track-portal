@@ -1,40 +1,59 @@
-
 import MainLayout from '@/components/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, Users, Briefcase } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Calendar, Clock, MapPin, Users, Briefcase, PlusCircle } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, runTransaction, Timestamp, increment } from 'firebase/firestore';
 import { Event } from '@/types/event';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useState, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { doc, runTransaction, increment, Timestamp } from 'firebase/firestore';
-import { useMutation } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import EventDetailsDialog from '@/components/EventDetailsDialog';
 
 const Events = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isLoggedIn] = useState(() => localStorage.getItem('userLoggedIn') === 'true');
-  const [userId] = useState(() => localStorage.getItem('userId'));
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const loggedIn = localStorage.getItem('userLoggedIn') === 'true';
+      const id = localStorage.getItem('userId');
+      setIsLoggedIn(loggedIn);
+      setUserId(id);
+    };
+
+    checkAuth();
+    window.addEventListener('storage', checkAuth);
+
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+    };
+  }, []);
 
   const { data: events, isLoading, error } = useQuery<Event[]>({
     queryKey: ['events', 'public'],
     queryFn: async () => {
         const eventsCollection = collection(db, "events");
-        const q = query(collection(db, "events"), where("status", "in", ["upcoming", "ongoing"]));
+        // Simple query without orderBy to avoid composite index requirement
+        const q = query(eventsCollection, where("status", "in", ["upcoming", "ongoing"]));
         const eventSnapshot = await getDocs(q);
-        return eventSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Event, 'id'>), id: doc.id }));
+        const eventsData = eventSnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Event, 'id'>), id: doc.id }));
+        // Sort client-side by date ascending
+        return eventsData.sort((a, b) => a.date.toMillis() - b.date.toMillis());
     }
   });
 
   const { data: registeredEventIds } = useQuery<string[]>({
     queryKey: ['myRegistrations', userId],
     queryFn: async () => {
-      if (!userId) return []; //store in db
+      if (!userId) return [];
       const q = query(collection(db, "eventRegistrations"), where("studentId", "==", userId));
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => doc.data().eventId);
@@ -47,22 +66,26 @@ const Events = () => {
       if (!userId) throw new Error("You must be logged in to register.");
       
       const eventRef = doc(db, "events", event.id);
-
-      //check for existing registration again for safety
-      const registrationQuery = query(collection(db, "eventRegistrations"), where("eventId", "==", event.id), where("studentId", "==", userId));
+      const registrationId = `${event.id}_${userId}`;
+      const registrationRef = doc(db, "eventRegistrations", registrationId);
 
       await runTransaction(db, async (transaction) => {
         const eventDoc = await transaction.get(eventRef);
-        if (!eventDoc.exists()) throw new Error("Event does not exist!");
-        
-        const existingRegs = await getDocs(registrationQuery);
-        if(!existingRegs.empty) throw new Error("You are already registered for this event.");
+        if (!eventDoc.exists()) {
+          throw new Error("Event does not exist!");
+        }
+
+        const registrationDoc = await transaction.get(registrationRef);
+        if (registrationDoc.exists()) {
+          throw new Error("You are already registered for this event.");
+        }
 
         const eventData = eventDoc.data();
-        if (eventData.participants >= eventData.capacity) throw new Error("This event is already full.");
+        if (eventData.participants >= eventData.capacity) {
+          throw new Error("This event is already full.");
+        }
 
-        const newRegistrationRef = doc(collection(db, "eventRegistrations"));
-        transaction.set(newRegistrationRef, {
+        transaction.set(registrationRef, {
             eventId: event.id,
             studentId: userId,
             eventName: eventData.name,
@@ -76,7 +99,9 @@ const Events = () => {
     onSuccess: () => {
       toast({ title: "Registration Successful", description: "You are now registered for the event." });
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['myRegistrations'] });
+      queryClient.invalidateQueries({ queryKey: ['myRegistrations', userId] });
+      queryClient.invalidateQueries({ queryKey: ['studentRegistrations', userId] });
+      setIsDetailsOpen(false);
     },
     onError: (error: Error) => {
       toast({ title: "Registration Failed", description: error.message, variant: "destructive" });
@@ -93,6 +118,11 @@ const Events = () => {
         return;
     }
     registerMutation.mutate(event);
+  };
+
+  const handleViewDetails = (event: Event) => {
+    setSelectedEvent(event);
+    setIsDetailsOpen(true);
   };
 
   const getCategoryColor = (category: string) => {
@@ -137,7 +167,6 @@ const Events = () => {
         return <div className="text-center text-destructive py-10 md:col-span-3">Could not load events.</div>;
     }
 
-    //if no events are ongoing or upcoming
     if (!events || events.length === 0) {
         return (
             <div className="text-center py-12 md:col-span-3">
@@ -148,7 +177,12 @@ const Events = () => {
         )
     }
 
-    return events.map((event) => (
+    return events.map((event) => {
+      const isFull = event.participants >= event.capacity;
+      const isRegistered = registeredEventIds?.includes(event.id) ?? false;
+      const isRegistering = registerMutation.isPending && registerMutation.variables?.id === event.id;
+
+      return (
         <Card key={event.id} className="hover:shadow-lg transition-shadow">
           <CardHeader>
             <div className="flex justify-between items-start mb-2">
@@ -156,13 +190,13 @@ const Events = () => {
                 <span className="capitalize">{event.type}</span>
               </Badge>
               <span className={`text-sm font-medium ${getAvailabilityColor(event.participants, event.capacity)}`}>
-                {event.capacity - event.participants} spots left
+                {isFull ? 'Full' : `${event.capacity - event.participants} spots left`}
               </span>
             </div>
             <CardTitle className="text-xl">{event.name}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-600 mb-4">{event.description}</p>
+            <p className="text-gray-600 mb-4 line-clamp-2">{event.description}</p>
             
             <div className="space-y-2 mb-4">
               <div className="flex items-center text-sm text-gray-500">
@@ -187,32 +221,57 @@ const Events = () => {
               <Button 
                 variant="default"
                 className="flex-1"
-                disabled={event.participants >= event.capacity}
+                disabled={isFull || isRegistered || isRegistering}
                 onClick={() => handleRegister(event)}
               >
-                {event.participants >= event.capacity ? 'Full' : 'Register'}
+                {isRegistering ? 'Registering...' : (isRegistered ? 'Registered' : (isFull ? 'Full' : 'Register'))}
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleViewDetails(event)}
+              >
                 Details
               </Button>
             </div>
           </CardContent>
         </Card>
-      ));
+      )
+    });
   }
 
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Upcoming Events</h1>
-          <p className="text-gray-600">Discover and register for upcoming events and activities</p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Upcoming Events</h1>
+            <p className="text-gray-600">Discover and register for upcoming events and activities</p>
+          </div>
+          {isLoggedIn && (
+            <Link to="/student/submit-event">
+              <Button className="bg-green-600 hover:bg-green-700 text-white">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Submit an Event
+              </Button>
+            </Link>
+          )}
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {renderEvents()}
         </div>
       </div>
+
+      {/* Event Details Dialog */}
+      <EventDetailsDialog
+        event={selectedEvent}
+        open={isDetailsOpen}
+        onOpenChange={setIsDetailsOpen}
+        isRegistered={selectedEvent ? (registeredEventIds?.includes(selectedEvent.id) ?? false) : false}
+        onRegister={() => selectedEvent && handleRegister(selectedEvent)}
+        isRegistering={registerMutation.isPending}
+      />
     </MainLayout>
   );
 };

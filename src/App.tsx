@@ -27,6 +27,10 @@ import CompanyDetails from "./pages/CompanyDetails";
 import NotFound from "./pages/NotFound";
 import AdminJobManagement from "./pages/AdminJobManagement";
 import AdminEmployerReview from "./pages/AdminEmployerReview";
+import EmployerPostJob from "./pages/EmployerPostJob";
+import StudentSubmitEvent from "./pages/StudentSubmitEvent";
+import CareerPathDetails from "./pages/CareerPathDetails";
+import JobDetails from "./pages/JobDetails";
 
 // Create a client outside of the component
 const queryClient = new QueryClient();
@@ -50,11 +54,14 @@ const App = () => (
             <Route path="/admin/employers" element={<AdminEmployerReview />} />
             <Route path="/admin/events" element={<EventManagement />} />
             <Route path="/jobs" element={<Jobs />} />
-            <Route path="/jobs/:id" element={<Jobs />} />
+            <Route path="/jobs/:id" element={<JobDetails />} />
+            <Route path="/career-path" element={<CareerPathDetails />} />
             <Route path="/company/:id" element={<CompanyDetails />} />
+            <Route path="/employer/post-job" element={<EmployerPostJob />} />
             <Route path="/resume" element={<Resume />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/events" element={<Events />} />
+            <Route path="/student/submit-event" element={<StudentSubmitEvent />} />
             <Route path="/ai-resume-screen" element={<AIResumeScreen />} />
             <Route path="/applications" element={<Applications />} />
             <Route path="/recommendations" element={<Recommendations />} />

@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import MainLayout from "@/components/MainLayout";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -35,7 +36,7 @@ const Login = () => {
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
-      const userDocRef = doc(db, "users", user.uid); //getting details from firestore
+      const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
       let userRole = 'student';
@@ -58,7 +59,12 @@ const Login = () => {
         description: "Redirecting to your dashboard...",
       });
       
-      navigate("/dashboard");
+      // Redirect based on role
+      if (userRole === 'admin') {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
 
     } catch (error: any) {
       console.error("Login failed. Firebase error:", error);
@@ -66,7 +72,7 @@ const Login = () => {
       let errorMessage = "An unknown error occurred. Please try again.";
       switch (error.code) {
         case 'auth/invalid-email':
-          errorMessage = "The email address is invalid.";
+          errorMessage = "The email address is not valid.";
           break;
         case 'auth/user-disabled':
           errorMessage = "This user account has been disabled.";
@@ -111,7 +117,7 @@ const Login = () => {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="janedoe@example.com"
+                    placeholder="you@example.com"
                     required
                     value={formData.email}
                     onChange={handleChange}

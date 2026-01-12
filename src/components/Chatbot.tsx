@@ -116,7 +116,7 @@ const Chatbot = () => {
         <div className="fixed bottom-24 right-6 z-40 w-80 h-[28rem]">
           <Card className="h-full flex flex-col shadow-xl">
             <CardHeader className="bg-unisphere-blue text-white rounded-t-lg">
-              <CardTitle className="text-lg">UniSphere Assistant</CardTitle>
+              <CardTitle className="text-lg">Evangeline</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
               {/* Messages Area */}

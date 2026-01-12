@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import MainLayout from "@/components/MainLayout";
 import { Shield } from "lucide-react";
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -39,7 +39,7 @@ const AdminLogin = () => {
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
-      if (userDoc.exists() && userDoc.data().role === 'admin') { //from the database
+      if (userDoc.exists() && userDoc.data().role === 'admin') {
         localStorage.setItem('userLoggedIn', 'true');
         localStorage.setItem('userRole', 'admin');
         localStorage.setItem('userId', user.uid);
@@ -98,7 +98,7 @@ const AdminLogin = () => {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="admin@example.com"
+                    placeholder="admin@unisphere.com"
                     required
                     value={formData.email}
                     onChange={handleChange}

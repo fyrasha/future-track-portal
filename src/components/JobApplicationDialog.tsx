@@ -69,6 +69,7 @@ const JobApplicationDialog = ({
     },
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['jobs'] });
+        queryClient.invalidateQueries({ queryKey: ['applications'] });
         
         toast({
             title: "Application Submitted",

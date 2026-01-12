@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Table, 
@@ -65,7 +66,8 @@ const Applications = () => {
     queryKey: ['applications', userId],
     queryFn: async () => {
       if (!userId) return [];
-      //query without ordering to avoid needing a composite index in Firestore.
+      // Query without ordering to avoid needing a composite index in Firestore.
+      // Sorting is done on the client-side after fetching.
       const q = query(collection(db, "applications"), where("studentId", "==", userId));
       const snapshot = await getDocs(q);
       const appData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Application));

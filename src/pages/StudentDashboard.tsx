@@ -7,9 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Briefcase, Trophy, Clock, MapPin, Users, TrendingUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where, orderBy, Timestamp } from "firebase/firestore";
+import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartTooltip } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 interface EventRegistration {
@@ -69,16 +69,18 @@ const StudentDashboard = () => {
     queryKey: ['studentRegistrations', userId],
     queryFn: async () => {
       if (!userId) return [];
+      // Simple query without orderBy to avoid composite index requirement
       const q = query(
         collection(db, "eventRegistrations"),
-        where("studentId", "==", userId),
-        orderBy("registeredAt", "desc")
+        where("studentId", "==", userId)
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ 
+      const regs = snapshot.docs.map(doc => ({ 
         id: doc.id, 
         ...doc.data() 
       } as EventRegistration));
+      // Sort client-side by registeredAt descending
+      return regs.sort((a, b) => b.registeredAt.toMillis() - a.registeredAt.toMillis());
     },
     enabled: !!userId,
   });
@@ -124,14 +126,15 @@ const StudentDashboard = () => {
   const totalActivities = enrichedRegistrations.length;
   const completedActivities = enrichedRegistrations.filter(a => a.status === 'completed').length;
   const upcomingActivities = enrichedRegistrations.filter(a => a.status === 'upcoming').length;
+  const completionRate = totalActivities > 0 ? Math.round((completedActivities / totalActivities) * 100) : 0;
 
-  // Chart data for activity types
+  // Chart data for activity types with colors
   const activityTypeData = enrichedRegistrations.reduce((acc: any[], reg) => {
     const existing = acc.find(item => item.type === reg.type);
     if (existing) {
       existing.count += 1;
     } else {
-      acc.push({ type: reg.type || 'event', count: 1 });
+      acc.push({ type: reg.type || 'event', count: 1, name: reg.type || 'event' });
     }
     return acc;
   }, []);
@@ -148,7 +151,7 @@ const StudentDashboard = () => {
     return acc;
   }, []).slice(-6);
 
-  const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+  const COLORS = ['#8B5CF6', '#F97316', '#10B981', '#3B82F6', '#EC4899', '#F59E0B'];
 
   if (isLoading) {
     return (
@@ -174,110 +177,190 @@ const StudentDashboard = () => {
         </div>
 
         {/* Overview Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Activities</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Activities</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 text-unisphere-blue" />
-                <div className="text-2xl font-bold">{totalActivities}</div>
+              <div className="flex items-center justify-between">
+                <div className="text-3xl font-bold text-primary">{totalActivities}</div>
+                <Calendar className="h-8 w-8 text-primary/20" />
               </div>
+              <p className="text-xs text-muted-foreground mt-2">All registered events</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-green-500">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Completed</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center space-x-2">
-                <Trophy className="h-4 w-4 text-green-600" />
-                <div className="text-2xl font-bold text-green-600">{completedActivities}</div>
+              <div className="flex items-center justify-between">
+                <div className="text-3xl font-bold text-green-600">{completedActivities}</div>
+                <Trophy className="h-8 w-8 text-green-500/20" />
               </div>
+              <p className="text-xs text-muted-foreground mt-2">{completionRate}% completion rate</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-blue-500">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Upcoming</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4 text-blue-600" />
-                <div className="text-2xl font-bold text-blue-600">{upcomingActivities}</div>
+              <div className="flex items-center justify-between">
+                <div className="text-3xl font-bold text-blue-600">{upcomingActivities}</div>
+                <Clock className="h-8 w-8 text-blue-500/20" />
               </div>
+              <p className="text-xs text-muted-foreground mt-2">Events to attend</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-background">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Progress</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="text-3xl font-bold text-purple-600">{completionRate}%</div>
+                <TrendingUp className="h-8 w-8 text-purple-500/20" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Overall completion</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Visualizations */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
+          <Card className="shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="p-2 rounded-full bg-purple-100">
+                  <TrendingUp className="h-4 w-4 text-purple-600" />
+                </div>
                 Activity by Type
               </CardTitle>
               <CardDescription>Distribution of your registered events</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               {activityTypeData.length > 0 ? (
-                <ChartContainer config={{}} className="h-[300px]">
+                <div className="h-[280px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={activityTypeData}
                         cx="50%"
                         cy="50%"
-                        labelLine={false}
-                        label={({ type, percent }) => `${type}: ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
+                        innerRadius={50}
+                        outerRadius={90}
+                        paddingAngle={4}
                         dataKey="count"
+                        nameKey="type"
+                        label={({ type, percent }) => `${type}: ${(percent * 100).toFixed(0)}%`}
+                        labelLine={{ stroke: '#888', strokeWidth: 1 }}
                       >
                         {activityTypeData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={COLORS[index % COLORS.length]} 
+                            stroke="white"
+                            strokeWidth={2}
+                          />
                         ))}
                       </Pie>
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Legend />
+                      <ChartTooltip 
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-background border rounded-lg shadow-lg p-3">
+                                <p className="font-medium capitalize">{payload[0].name}</p>
+                                <p className="text-sm text-muted-foreground">{payload[0].value} events</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Legend 
+                        formatter={(value) => <span className="capitalize text-sm">{value}</span>}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
-                </ChartContainer>
+                </div>
               ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  No activity data yet
+                <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <TrendingUp className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                    <p>No activity data yet</p>
+                  </div>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
+          <Card className="shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="p-2 rounded-full bg-blue-100">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                </div>
                 Registration Trend
               </CardTitle>
               <CardDescription>Your event registrations over time</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               {monthlyData.length > 0 ? (
-                <ChartContainer config={{}} className="h-[300px]">
+                <div className="h-[280px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                    <BarChart data={monthlyData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+                      <defs>
+                        <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#3B82F6" stopOpacity={1} />
+                          <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0.8} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                      <XAxis 
+                        dataKey="month" 
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                      />
+                      <YAxis 
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                        allowDecimals={false}
+                      />
+                      <ChartTooltip 
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-background border rounded-lg shadow-lg p-3">
+                                <p className="font-medium">{label}</p>
+                                <p className="text-sm text-muted-foreground">{payload[0].value} registrations</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Bar 
+                        dataKey="count" 
+                        fill="url(#barGradient)" 
+                        radius={[8, 8, 0, 0]}
+                        maxBarSize={50}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
-                </ChartContainer>
+                </div>
               ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  No registration data yet
+                <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Calendar className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                    <p>No registration data yet</p>
+                  </div>
                 </div>
               )}
             </CardContent>

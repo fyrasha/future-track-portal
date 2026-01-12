@@ -17,7 +17,7 @@ import {
   Target,
   Loader2
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { db, auth } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
@@ -42,6 +42,7 @@ interface RecommendedJob {
 }
 
 const Recommendations = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"careers" | "jobs">("careers");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -285,7 +286,10 @@ const Recommendations = () => {
                       </ul>
                     </div>
                     <div className="pt-2">
-                      <Button className="w-full bg-unisphere-darkBlue hover:bg-unisphere-blue text-white">
+                      <Button 
+                        className="w-full bg-unisphere-darkBlue hover:bg-unisphere-blue text-white"
+                        onClick={() => navigate("/career-path", { state: { careerPath: path } })}
+                      >
                         Explore Career Path
                         <ArrowRight className="ml-1 h-4 w-4" />
                       </Button>

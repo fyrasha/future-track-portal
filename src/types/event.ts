@@ -1,8 +1,8 @@
 
 import { Timestamp } from 'firebase/firestore';
 
-export type EventType = 'career' | 'workshop' | 'networking' | 'seminar' | 'orientation' | 'academic' | 'visit' | 'interview';
-export type EventStatus = 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+export type EventType = 'career' | 'workshop' | 'networking' | 'seminar' | 'orientation' | 'academic' | 'visit' | 'interview' | 'lecture' | 'social' | 'other';
+export type EventStatus = 'upcoming' | 'ongoing' | 'completed' | 'cancelled' | 'pending';
 
 export interface Event {
   id: string; // Document ID
@@ -16,6 +16,8 @@ export interface Event {
   participants: number;
   capacity: number;
   createdAt: Timestamp;
+  organizer?: string;
+  contactEmail?: string;
 }
 
 export type EventFormValues = {

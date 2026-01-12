@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import MainLayout from "@/components/MainLayout";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
 
-const Signup = () => { //details to fill in for signup
+const Signup = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -43,7 +43,7 @@ const Signup = () => { //details to fill in for signup
     e.preventDefault();
     
     // Simple validation
-    if (formData.password !== formData.confirmPassword) { //to check if the passwords match
+    if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Passwords don't match",
         description: "Please make sure both passwords match.",
@@ -52,7 +52,7 @@ const Signup = () => { //details to fill in for signup
       return;
     }
     
-    if (formData.password.length < 8) { //set password length
+    if (formData.password.length < 8) {
       toast({
         title: "Password too short",
         description: "Password must be at least 8 characters long.",
@@ -70,17 +70,17 @@ const Signup = () => { //details to fill in for signup
       return;
     }
 
-    setIsSubmitting(true); //submit details
+    setIsSubmitting(true);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword( //for login later on
+      const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,
         formData.password
       );
       const user = userCredential.user;
 
-      //store additional user info in Firestore (no password for security)
+      // Store additional user info in Firestore
       await setDoc(doc(db, "users", user.uid), {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -97,7 +97,7 @@ const Signup = () => { //details to fill in for signup
 
       toast({
         title: "Account created successfully!",
-        description: "Redirecting you to your dashboard.",
+        description: "Redirecting you to the dashboard.",
       });
       
       navigate("/dashboard");
@@ -142,7 +142,7 @@ const Signup = () => { //details to fill in for signup
                     <Input
                       id="firstName"
                       name="firstName"
-                      placeholder="Jane"
+                      placeholder="John"
                       required
                       value={formData.firstName}
                       onChange={handleChange}
@@ -153,7 +153,7 @@ const Signup = () => { //details to fill in for signup
                     <Input
                       id="lastName"
                       name="lastName"
-                      placeholder="Doe"
+                      placeholder="Smith"
                       required
                       value={formData.lastName}
                       onChange={handleChange}
@@ -166,7 +166,7 @@ const Signup = () => { //details to fill in for signup
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="janedoe@example.com"
+                    placeholder="you@example.com"
                     required
                     value={formData.email}
                     onChange={handleChange}
@@ -177,7 +177,7 @@ const Signup = () => { //details to fill in for signup
                   <Select onValueChange={handleStudyYearChange} required>
                     <SelectTrigger>
                       <SelectValue placeholder="Select your current study year" />
-                    </SelectTrigger> 
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="first">First Year</SelectItem>
                       <SelectItem value="second">Second Year</SelectItem>

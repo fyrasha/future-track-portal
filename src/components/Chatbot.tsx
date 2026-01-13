@@ -58,6 +58,11 @@ const Chatbot = () => {
         body: { messages: conversationMessages }
       });
 
+      // Check for rate limit error in data (429 responses return data with error)
+      if (data?.error && data.error.includes("Rate limits exceeded")) {
+        throw new Error(data.error);
+      }
+
       if (error) {
         throw error;
       }

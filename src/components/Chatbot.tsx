@@ -77,15 +77,22 @@ const Chatbot = () => {
 
     } catch (error: any) {
       console.error("Error calling chat API:", error);
+      
+      const isRateLimit = error?.message?.includes("Rate limits exceeded");
+      
       const botResponse = {
         id: Date.now() + 1,
-        text: `Sorry, I'm having trouble connecting right now. Please try again in a moment.`,
+        text: isRateLimit 
+          ? "Rate limits exceeded. Please try again later." 
+          : "Sorry, I'm having trouble connecting right now. Please try again in a moment.",
         isBot: true
       };
       setMessages(prev => [...prev, botResponse]);
       
-      toast.error("Connection Error", {
-        description: "Unable to reach the assistant. Please try again.",
+      toast.error(isRateLimit ? "Rate Limit Exceeded" : "Connection Error", {
+        description: isRateLimit 
+          ? "Too many requests. Please wait a moment before trying again." 
+          : "Unable to reach the assistant. Please try again.",
       });
     } finally {
       setIsTyping(false);

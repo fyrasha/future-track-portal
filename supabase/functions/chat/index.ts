@@ -13,7 +13,7 @@ serve(async (req) => {
   try {
     // TEMPORARY: Force 429 for screenshot - REMOVE THIS AFTER TESTING
     return new Response(
-      JSON.stringify({ error: "Rate limits exceeded, please try again later." }),
+      JSON.stringify({ error: "Rate limit exceeded, please try again later." }),
       {
         status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

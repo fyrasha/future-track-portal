@@ -59,7 +59,7 @@ const Chatbot = () => {
       });
 
       // Check for rate limit error in data (429 responses return data with error)
-      if (data?.error && data.error.includes("Rate limits exceeded")) {
+      if (data?.error && data.error.includes("Rate limit exceeded")) {
         throw new Error(data.error);
       }
 
@@ -83,12 +83,12 @@ const Chatbot = () => {
     } catch (error: any) {
       console.error("Error calling chat API:", error);
       
-      const isRateLimit = error?.message?.includes("Rate limits exceeded");
+      const isRateLimit = error?.message?.includes("Rate limit exceeded");
       
       const botResponse = {
         id: Date.now() + 1,
         text: isRateLimit 
-          ? "Rate limits exceeded. Please try again later." 
+          ? "Rate limit exceeded. Please try again later." 
           : "Sorry, I'm having trouble connecting right now. Please try again in a moment.",
         isBot: true
       };

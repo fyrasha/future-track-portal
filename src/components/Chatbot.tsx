@@ -94,9 +94,9 @@ const Chatbot = () => {
       };
       setMessages(prev => [...prev, botResponse]);
       
-      toast.error(isRateLimit ? "Rate Limit Exceeded" : "Connection Error", {
+      toast.error(isRateLimit ? "Rate limit exceeded" : "Connection Error", {
         description: isRateLimit 
-          ? "Too many requests. Please wait a moment before trying again." 
+          ? "Rate limit exceeded. Please try again later." 
           : "Unable to reach the assistant. Please try again.",
       });
     } finally {

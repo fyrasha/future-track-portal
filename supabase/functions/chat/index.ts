@@ -11,6 +11,15 @@ serve(async (req) => {
   }
 
   try {
+    // TEMPORARY: Force 429 for screenshot - REMOVE THIS AFTER TESTING
+    return new Response(
+      JSON.stringify({ error: "Rate limits exceeded, please try again later." }),
+      {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+
     const { messages } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
